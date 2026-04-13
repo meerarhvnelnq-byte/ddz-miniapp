@@ -2,97 +2,50 @@
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🎮 斗地主 Mini App 启动');
   
-  // 初始化 Telegram WebApp
-  API.expandWebApp();
-  
-  // 获取用户信息
-  const user = API.getUserInfo();
-  if (!user) {
-    alert('无法获取用户信息，请从 Telegram 打开');
-    return;
-  }
-  
-  console.log('👤 用户:', user);
-  
-  // 初始化游戏
-  // chatId 和 userId 由 bot 通过 URL 参数传递
-  const urlParams = new URLSearchParams(window.location.search);
-  const chatId = urlParams.get('chat_id') || user.id;
-  const userId = user.id;
-  
-  Game.init(chatId, userId);
-  
-  // 设置用户信息显示
-  const usernameEl = document.getElementById('username');
-  if (usernameEl) {
-    usernameEl.textContent = `@${user.username || user.first_name}`;
-  }
-  
-  // 绑定大厅按钮事件
-  document.getElementById('create-room-btn').addEventListener('click', () => {
-    Game.createRoom();
-  });
-  
-  document.getElementById('join-room-btn').addEventListener('click', async () => {
-    const code = prompt('请输入房间号:');
-    if (code) {
-      Game.joinRoom(code);
+  try {
+    // 初始化 Telegram WebApp
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+      console.log('✅ Telegram WebApp 已初始化');
+    } else {
+      console.warn('⚠️ 不在 Telegram 环境中');
     }
-  });
-  
-  document.getElementById('view-score-btn').addEventListener('click', () => {
-    Game.viewScore();
-  });
-  
-  document.getElementById('view-history-btn').addEventListener('click', () => {
-    // TODO: 打开战绩页面
-    alert('战绩功能开发中...');
-  });
-  
-  document.getElementById('daily-btn').addEventListener('click', () => {
-    Game.dailyClaim();
-  });
-  
-  // 绑定游戏按钮事件
-  document.getElementById('bid-1-btn').addEventListener('click', () => {
-    Game.bid(1);
-  });
-  
-  document.getElementById('bid-2-btn').addEventListener('click', () => {
-    Game.bid(2);
-  });
-  
-  document.getElementById('bid-3-btn').addEventListener('click', () => {
-    Game.bid(3);
-  });
-  
-  document.getElementById('no-bid-btn').addEventListener('click', () => {
-    Game.bid(0);
-  });
-  
-  document.getElementById('pass-btn').addEventListener('click', () => {
-    Game.pass();
-  });
-  
-  document.getElementById('play-btn').addEventListener('click', () => {
-    Game.playCards();
-  });
-  
-  document.getElementById('back-lobby-btn').addEventListener('click', () => {
-    Game.quit();
-  });
-  
-  // 监听 bot 返回数据
-  API.setupMessageListener((data) => {
-    console.log('📩 收到数据:', data);
-    handleBotResponse(data);
-  });
-  
-  // 隐藏加载屏幕
-  setTimeout(() => {
-    document.getElementById('loading-screen').style.display = 'none';
-    document.getElementById('lobby-screen').style.display = 'flex';
-  }, 1000);
+    
+    // 获取用户信息
+    const user = (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) 
+      ? window.Telegram.WebApp.initDataUnsafe.user 
+      : null;
+    
+    if (!user) {
+      // 非 Telegram 环境，显示提示
+      document.getElementById('loading-screen').innerHTML = '<h2 style="color:white;text-align:center;">🎮 斗地主</h2><p style="color:white;text-align:center;">请在 Telegram 中打开</p>';
+      return;
+    }
+    
+    console.log('👤 用户:', user);
+    
+    // 设置用户信息显示
+    const usernameEl = document.getElementById('username');
+    const scoreEl = document.getElementById('user-score');
+    if (usernameEl) {
+      usernameEl.textContent = `@${user.username || user.first_name}`;
+    }
+    if (scoreEl) {
+      scoreEl.textContent = '加载中...';
+    }
+    
+    // 隐藏加载屏幕，显示大厅
+    setTimeout(() => {
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('lobby-screen').style.display = 'flex';
+      console.log('✅ 大厅已显示');
+    }, 500);
+    
+  } catch (e) {
+    console.error('❌ 初始化失败:', e);
+    document.getElementById('loading-screen').innerHTML = `<h2 style="color:white;">错误</h2><p style="color:white;">${e.message}</p>`;
+  }
 });
 
 // 处理 bot 响应

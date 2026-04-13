@@ -10,7 +10,7 @@ import json
 import os
 
 # Mini App URL - 部署后替换为实际地址
-MINI_APP_URL = "https://will-adss.github.io/ddz-miniapp/"
+MINI_APP_URL = "https://meerarhvnelnq-byte.github.io/ddz-miniapp/"
 
 # 文件路径
 SCORES_FILE = "/root/.openclaw/workspace/bots/ddz/scores.json"

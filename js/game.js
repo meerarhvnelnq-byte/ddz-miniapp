@@ -105,6 +105,7 @@ const Game = {
 const UI = {
   // 渲染游戏状态
   render(state) {
+    console.log('🎮 渲染状态:', state.status);
     switch (state.status) {
       case 'lobby':
         this.showLobby();
@@ -126,15 +127,11 @@ const UI = {
   
   // 显示大厅
   showLobby() {
+    console.log('✅ 显示大厅');
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('lobby-screen').style.display = 'flex';
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('result-screen').style.display = 'none';
-    
-    const user = API.getUserInfo();
-    if (user) {
-      document.getElementById('username').textContent = `@${user.username || user.first_name}`;
-    }
   },
   
   // 显示等待房间
