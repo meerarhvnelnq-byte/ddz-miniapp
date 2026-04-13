@@ -551,12 +551,19 @@
         请出牌
       </div>
       
+      <div class="status-bar" id="game-timer" style="background:rgba(255,87,87,0.3);font-size:14px;">
+        ⏱️ 剩余时间：15 秒
+      </div>
+      
       <div class="action-buttons">
         <button class="action-btn pass-btn" id="pass-btn" onclick="pass()">
           不要
         </button>
         <button class="action-btn play-btn" id="play-btn" onclick="playCards()">
           出牌
+        </button>
+        <button class="action-btn ${state.autoPlay ? 'btn-warning' : 'btn-secondary'}" id="auto-btn" onclick="toggleAutoPlay()" style="width:auto;">
+          🤖 ${state.autoPlay ? '托管中' : '托管'}
         </button>
       </div>
     </div>
@@ -592,7 +599,17 @@
       isLandlord: false,
       currentPlayer: 0,
       lastPlay: null,
-      selectedCards: []
+      selectedCards: [],
+      // 新增：游戏规则
+      bombCount: 0,  // 炸弹数量
+      isSpring: false,  // 是否春天
+      isDoubleSpring: false,  // 是否反春
+      autoPlay: false,  // 是否托管
+      timerId: null,  // 计时器
+      timeLeft: 15,  // 剩余时间
+      playedCards: [],  // 已出的牌
+      opponent1Cards: 17,  // 对手 1 剩余牌数
+      opponent2Cards: 17  // 对手 2 剩余牌数
     };
     
     // 初始化
@@ -699,6 +716,20 @@
     
     // 游戏逻辑
     function initGame() {
+      // 重置游戏状态
+      state.bombCount = 0;
+      state.isSpring = false;
+      state.isDoubleSpring = false;
+      state.autoPlay = false;
+      state.playedCards = [];
+      state.opponent1Cards = 17;
+      state.opponent2Cards = 17;
+      state.lastPlay = null;
+      
+      if (state.timerId) {
+        clearInterval(state.timerId);
+      }
+      
       // 生成扑克牌
       const deck = generateDeck();
       // 发牌
@@ -712,6 +743,8 @@
       const players = ['玩家 1', '玩家 2', state.user?.first_name || '我'];
       document.getElementById('player1-name').textContent = players[0];
       document.getElementById('player2-name').textContent = players[1];
+      document.getElementById('player1-cards').textContent = '🂠'.repeat(17);
+      document.getElementById('player2-cards').textContent = '🂠'.repeat(17);
       
       // 渲染手牌
       renderHand();
@@ -797,6 +830,7 @@
         setTimeout(() => {
           showScreen('game');
           document.getElementById('game-status').textContent = '轮到你了，请出牌';
+          startTimer();  // 启动计时器
         }, 1000);
       } else {
         Telegram.WebApp.showPopup({
@@ -825,8 +859,122 @@
         message: '你选择不要'
       });
       
+      state.lastPlay = {
+        cards: [],
+        type: 'pass',
+        player: 'me'
+      };
+      
       // 切换到下一个玩家
       document.getElementById('game-status').textContent = '等待其他玩家出牌';
+      
+      // 模拟其他玩家出牌
+      setTimeout(() => {
+        simulateOpponentPlay();
+      }, 1000);
+    }
+    
+    // 模拟对手出牌
+    function simulateOpponentPlay() {
+      // 简单模拟：随机一个玩家出牌
+      const opponent = Math.random() > 0.5 ? 'player1' : 'player2';
+      const cardsLeft = opponent === 'player1' ? state.opponent1Cards : state.opponent2Cards;
+      
+      if (cardsLeft > 0) {
+        // 对手出牌
+        const cardsPlayed = Math.min(Math.floor(Math.random() * 3) + 1, cardsLeft);
+        if (opponent === 'player1') {
+          state.opponent1Cards -= cardsPlayed;
+          document.getElementById('player1-cards').textContent = '🂠'.repeat(state.opponent1Cards);
+        } else {
+          state.opponent2Cards -= cardsPlayed;
+          document.getElementById('player2-cards').textContent = '🂠'.repeat(state.opponent2Cards);
+        }
+        
+        document.getElementById('game-status').textContent = '轮到你了';
+        
+        // 检查对手是否赢了
+        if (cardsLeft - cardsPlayed === 0) {
+          setTimeout(() => {
+            showResult(false);
+          }, 1000);
+        }
+      }
+    }
+    
+    // 更新游戏状态显示
+    function updateGameStatus() {
+      const statusEl = document.getElementById('game-status');
+      if (state.lastPlay && state.lastPlay.player === 'me') {
+        statusEl.textContent = '等待其他玩家出牌';
+      } else {
+        statusEl.textContent = '轮到你了';
+      }
+    }
+    
+    // 计算积分（含翻倍规则）
+    function calculateScore(win) {
+      let baseScore = win ? 20 : -10;
+      let multiplier = 1;
+      let reasons = [];
+      
+      // 炸弹翻倍
+      if (state.bombCount > 0) {
+        multiplier *= Math.pow(2, state.bombCount);
+        reasons.push(`炸弹 x${state.bombCount}`);
+      }
+      
+      // 春天/反春
+      if (state.isSpring) {
+        multiplier *= 2;
+        reasons.push('春天');
+      }
+      if (state.isDoubleSpring) {
+        multiplier *= 2;
+        reasons.push('反春');
+      }
+      
+      // 地主翻倍
+      if (state.isLandlord) {
+        baseScore *= 2;
+        reasons.push('地主');
+      }
+      
+      const finalScore = baseScore * multiplier;
+      return {
+        score: finalScore,
+        multiplier: multiplier,
+        reasons: reasons
+      };
+    }
+    
+    // 显示结果（更新为带翻倍）
+    function showResult(win) {
+      if (state.timerId) {
+        clearInterval(state.timerId);
+      }
+      
+      showScreen('result');
+      
+      const result = calculateScore(win);
+      state.score += result.score;
+      
+      document.getElementById('result-title').textContent = win ? '🎉 你赢了！' : '😢 游戏结束';
+      document.getElementById('result-winner').textContent = win ? '恭喜你获胜！' : '再接再厉';
+      
+      let reasonText = result.reasons.length > 0 ? `\n(${result.reasons.join(', ')})` : '';
+      document.getElementById('result-score').textContent = `积分变化：${result.score > 0 ? '+' : ''}${result.score}${reasonText}`;
+      
+      // 保存战绩
+      HistoryManager.addGame({
+        win: win,
+        scoreChange: Math.abs(result.score),
+        isLandlord: state.isLandlord,
+        role: state.isLandlord ? '地主' : '农民',
+        bombCount: state.bombCount,
+        isSpring: state.isSpring,
+        isDoubleSpring: state.isDoubleSpring
+      });
     }
     
     function playCards() {
@@ -838,19 +986,57 @@
         return;
       }
       
+      // 获取选中的牌
+      const selectedCards = state.selectedCards.map(idx => state.myHand[idx]);
+      
+      // 验证牌型
+      const cardType = CardUtils.checkCardType(selectedCards);
+      if (!cardType.type) {
+        Telegram.WebApp.showPopup({
+          title: '无效牌型',
+          message: '这不是有效的牌型，请重新选择'
+        });
+        return;
+      }
+      
+      // 验证是否能打过上家
+      if (state.lastPlay && state.lastPlay.cards.length > 0) {
+        if (!CardUtils.canPlay(selectedCards, state.lastPlay.cards)) {
+          Telegram.WebApp.showPopup({
+            title: '提示',
+            message: `打不过上家的牌\n上家：${CardUtils.getCardTypeName(state.lastPlay.type)}`
+          });
+          return;
+        }
+      }
+      
+      // 检查是否是炸弹
+      if (cardType.type === 'bomb') {
+        state.bombCount++;
+        console.log('💣 炸弹！当前炸弹数：', state.bombCount);
+      } else if (cardType.type === 'rocket') {
+        state.bombCount += 2;  // 王炸算 2 个炸弹
+        console.log('🚀 王炸！当前炸弹数：', state.bombCount);
+      }
+      
+      // 记录出牌
+      state.playedCards.push(...selectedCards);
+      
       // 移除选中的牌
       const cardsToRemove = state.selectedCards.sort((a, b) => b - a);
       cardsToRemove.forEach(idx => {
         state.myHand.splice(idx, 1);
       });
       state.selectedCards = [];
+      state.lastPlay = {
+        cards: selectedCards,
+        type: cardType.type,
+        value: cardType.value,
+        player: 'me'
+      };
       
       renderHand();
-      
-      Telegram.WebApp.showPopup({
-        title: '出牌',
-        message: '你出了牌'
-      });
+      updateGameStatus();
       
       // 检查是否赢了
       if (state.myHand.length === 0) {
@@ -858,7 +1044,10 @@
           showResult(true);
         }, 1000);
       } else {
-        document.getElementById('game-status').textContent = '等待其他玩家出牌';
+        // 模拟其他玩家出牌
+        setTimeout(() => {
+          simulateOpponentPlay();
+        }, 1500);
       }
     }
     
@@ -880,11 +1069,76 @@
     }
     
     function quitGame() {
+      if (state.timerId) {
+        clearInterval(state.timerId);
+      }
       Telegram.WebApp.showConfirm('确定要退出游戏吗？', (confirmed) => {
         if (confirmed) {
           backToLobby();
         }
       });
+    }
+    
+    // 切换托管
+    function toggleAutoPlay() {
+      state.autoPlay = !state.autoPlay;
+      const btn = document.getElementById('auto-btn');
+      btn.textContent = state.autoPlay ? '🤖 托管中' : '🤖 托管';
+      btn.className = `action-btn ${state.autoPlay ? 'btn-warning' : 'btn-secondary'}`;
+      
+      if (state.autoPlay) {
+        Telegram.WebApp.showPopup({
+          title: '托管',
+          message: '已开启托管\n系统将自动出牌'
+        });
+        startTimer();
+      } else {
+        if (state.timerId) {
+          clearInterval(state.timerId);
+        }
+        document.getElementById('game-timer').style.display = 'none';
+      }
+    }
+    
+    // 启动计时器
+    function startTimer() {
+      if (state.timerId) {
+        clearInterval(state.timerId);
+      }
+      
+      state.timeLeft = 15;
+      const timerEl = document.getElementById('game-timer');
+      timerEl.style.display = 'block';
+      timerEl.textContent = `⏱️ 剩余时间：${state.timeLeft}秒`;
+      
+      state.timerId = setInterval(() => {
+        state.timeLeft--;
+        timerEl.textContent = `⏱️ 剩余时间：${state.timeLeft}秒`;
+        
+        if (state.timeLeft <= 0) {
+          clearInterval(state.timerId);
+          // 超时自动出牌
+          if (state.autoPlay) {
+            autoPlay();
+          }
+        }
+      }, 1000);
+    }
+    
+    // 自动出牌（托管）
+    function autoPlay() {
+      console.log('🤖 托管：自动出牌');
+      
+      // 简单策略：如果有单牌就出最小的单牌
+      if (state.myHand.length > 0) {
+        // 选择最小的牌
+        const minCardIdx = 0;  // 手牌已排序，第一个最小
+        state.selectedCards = [minCardIdx];
+        playCards();
+      } else {
+        // 没牌了就过
+        pass();
+      }
     }
     
     // 积分功能
