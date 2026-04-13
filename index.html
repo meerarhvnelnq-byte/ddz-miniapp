@@ -8,6 +8,7 @@
   <script src="js/utils.js"></script>
   <script src="js/history.js"></script>
   <script src="js/sound.js"></script>
+  <script src="js/animations.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -976,6 +977,9 @@
       // 播放音效
       if (win) {
         SoundManager.playWin();
+        // 胜利彩带动画
+        const resultScreen = document.getElementById('result-screen');
+        AnimationManager.playConfetti(resultScreen);
       } else {
         SoundManager.playLose();
       }
@@ -1040,15 +1044,31 @@
       if (cardType.type === 'bomb') {
         state.bombCount++;
         SoundManager.playBomb();
+        // 炸弹动画
+        AnimationManager.playBombAnimation(document.querySelector('.game-area'));
         console.log('💣 炸弹！当前炸弹数：', state.bombCount);
       } else if (cardType.type === 'rocket') {
         state.bombCount += 2;  // 王炸算 2 个炸弹
         SoundManager.playRocket();
+        // 王炸动画
+        AnimationManager.playRocketAnimation(document.querySelector('.game-area'));
         console.log('🚀 王炸！当前炸弹数：', state.bombCount);
       }
       
       // 出牌音效
       SoundManager.playCard();
+      
+      // 出牌动画
+      const handEl = document.getElementById('my-hand');
+      const centerArea = document.querySelector('.game-area') || handEl;
+      state.selectedCards.forEach((idx, i) => {
+        setTimeout(() => {
+          const cardEls = handEl.querySelectorAll('.card');
+          if (cardEls[idx]) {
+            AnimationManager.playCardAnimation(cardEls[idx], centerArea);
+          }
+        }, i * 100);
+      });
       
       // 记录出牌
       state.playedCards.push(...selectedCards);
@@ -1117,6 +1137,9 @@
       btn.textContent = state.autoPlay ? '🤖 托管中' : '🤖 托管';
       btn.className = `action-btn ${state.autoPlay ? 'btn-warning' : 'btn-secondary'}`;
       
+      // 按钮动画
+      AnimationManager.buttonClickAnimation(btn);
+      
       if (state.autoPlay) {
         Telegram.WebApp.showPopup({
           title: '托管',
@@ -1142,9 +1165,20 @@
       timerEl.style.display = 'block';
       timerEl.textContent = `⏱️ 剩余时间：${state.timeLeft}秒`;
       
+      // 倒计时动画
+      AnimationManager.countdownAnimation(timerEl, state.timeLeft, 15);
+      
       state.timerId = setInterval(() => {
         state.timeLeft--;
         timerEl.textContent = `⏱️ 剩余时间：${state.timeLeft}秒`;
+        
+        // 倒计时动画
+        AnimationManager.countdownAnimation(timerEl, state.timeLeft, 15);
+        
+        // 最后 5 秒警告音效
+        if (state.timeLeft <= 5 && state.timeLeft > 0) {
+          SoundManager.playWarning();
+        }
         
         if (state.timeLeft <= 0) {
           clearInterval(state.timerId);
