@@ -7,6 +7,7 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="js/utils.js"></script>
   <script src="js/history.js"></script>
+  <script src="js/sound.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -626,6 +627,9 @@
       
       console.log('👤 用户:', user);
       
+      // 初始化音效
+      SoundManager.init();
+      
       // 更新用户信息
       updateUserInfo();
     });
@@ -892,13 +896,28 @@
         }
         
         document.getElementById('game-status').textContent = '轮到你了';
+        startTimer();  // 重置计时器
         
         // 检查对手是否赢了
         if (cardsLeft - cardsPlayed === 0) {
+          // 对手赢了
+          if (state.isLandlord) {
+            // 我是地主，农民赢了 → 检查是否反春
+            if (state.playedCards.length === 0) {
+              state.isDoubleSpring = true;  // 反春：我一张牌没出
+            }
+          } else {
+            // 我是农民，地主赢了 → 检查是否春天
+            state.isSpring = true;  // 春天：农民一张牌没出
+          }
           setTimeout(() => {
             showResult(false);
           }, 1000);
         }
+      } else {
+        // 对手没牌了，该我出牌
+        document.getElementById('game-status').textContent = '轮到你了';
+        startTimer();
       }
     }
     
@@ -952,6 +971,13 @@
     function showResult(win) {
       if (state.timerId) {
         clearInterval(state.timerId);
+      }
+      
+      // 播放音效
+      if (win) {
+        SoundManager.playWin();
+      } else {
+        SoundManager.playLose();
       }
       
       showScreen('result');
@@ -1013,11 +1039,16 @@
       // 检查是否是炸弹
       if (cardType.type === 'bomb') {
         state.bombCount++;
+        SoundManager.playBomb();
         console.log('💣 炸弹！当前炸弹数：', state.bombCount);
       } else if (cardType.type === 'rocket') {
         state.bombCount += 2;  // 王炸算 2 个炸弹
+        SoundManager.playRocket();
         console.log('🚀 王炸！当前炸弹数：', state.bombCount);
       }
+      
+      // 出牌音效
+      SoundManager.playCard();
       
       // 记录出牌
       state.playedCards.push(...selectedCards);
@@ -1143,6 +1174,7 @@
     
     // 积分功能
     function viewScore() {
+      SoundManager.playClick();
       Telegram.WebApp.showPopup({
         title: '积分榜',
         message: `当前积分：${state.score}分\n段位：${state.rank}`
@@ -1150,6 +1182,7 @@
     }
     
     function dailyClaim() {
+      SoundManager.playClaim();
       state.score += 10;
       updateUserInfo();
       Telegram.WebApp.showPopup({
