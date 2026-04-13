@@ -1,0 +1,104 @@
+/* 牌面样式 */
+.card {
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  position: relative;
+  user-select: none;
+}
+
+.card-red {
+  color: #d40000;
+}
+
+.card-black {
+  color: #000;
+}
+
+.card .rank {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.card .suit {
+  font-size: 24px;
+  margin-top: 4px;
+}
+
+.card .corner-rank {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 12px;
+}
+
+.card .corner-suit {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  font-size: 12px;
+  transform: rotate(180deg);
+}
+
+/* 牌背 */
+.card-back {
+  width: 50px;
+  height: 75px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 6px;
+  border: 2px solid white;
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.1) 0px,
+      rgba(255,255,255,0.1) 2px,
+      transparent 2px,
+      transparent 4px
+    );
+}
+
+/* 小王 */
+.card.joker-small {
+  background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+}
+
+/* 大王 */
+.card.joker-big {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  color: #d40000;
+}
+
+/* 出牌动画 */
+.card.playing {
+  animation: playCard 0.5s ease-out;
+}
+
+@keyframes playCard {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-30px) scale(1.1);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 选中效果 */
+.card.selected {
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.6);
+  border: 2px solid #667eea;
+}
+
+/* 牌型提示 */
+.card-type-hint {
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  margin-top: 5px;
+}

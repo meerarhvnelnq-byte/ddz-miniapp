@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>斗地主</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/cards.css">
+</head>
+<body>
+  <!-- 加载页面 -->
+  <div id="loading-screen">
+    <div class="loader"></div>
+    <p>加载中...</p>
+  </div>
+
+  <!-- 大厅页面 -->
+  <div id="lobby-screen" class="screen" style="display: none;">
+    <div class="header">
+      <h1>🎮 斗地主</h1>
+      <div class="user-info">
+        <span id="username"></span>
+        <span id="user-score" class="score">0 分</span>
+      </div>
+    </div>
+    
+    <div class="lobby-menu">
+      <button id="create-room-btn" class="menu-btn primary">
+        🏠 创建房间
+      </button>
+      <button id="join-room-btn" class="menu-btn">
+        🚪 加入房间
+      </button>
+      <button id="view-score-btn" class="menu-btn">
+        📊 积分榜
+      </button>
+      <button id="view-history-btn" class="menu-btn">
+        📜 战绩
+      </button>
+      <button id="daily-btn" class="menu-btn success">
+        📅 签到
+      </button>
+    </div>
+    
+    <div class="room-code" id="room-code-display" style="display: none;">
+      <p>房间号：<span id="room-code"></span></p>
+      <p class="hint">分享给好友加入</p>
+    </div>
+  </div>
+
+  <!-- 游戏页面 -->
+  <div id="game-screen" class="screen" style="display: none;">
+    <!-- 顶部玩家（农民） -->
+    <div class="player-area top-player">
+      <div class="player-info">
+        <span id="top-player-name" class="player-name"></span>
+        <span id="top-player-cards" class="cards-count"></span>
+      </div>
+      <div class="cards-placeholder"></div>
+    </div>
+
+    <!-- 中间区域（底牌 + 出牌区） -->
+    <div class="game-area">
+      <div class="landlord-cards" id="landlord-cards">
+        <!-- 底牌 -->
+      </div>
+      <div class="last-play" id="last-play">
+        <!-- 最后一手牌 -->
+      </div>
+      <div class="game-message" id="game-message"></div>
+    </div>
+
+    <!-- 左侧玩家（农民） -->
+    <div class="player-area left-player">
+      <div class="player-info">
+        <span id="left-player-name" class="player-name"></span>
+        <span id="left-player-cards" class="cards-count"></span>
+      </div>
+      <div class="cards-placeholder"></div>
+    </div>
+
+    <!-- 右侧玩家（自己） -->
+    <div class="player-area right-player">
+      <div class="player-info">
+        <span id="right-player-name" class="player-name"></span>
+        <span id="right-player-cards" class="cards-count"></span>
+      </div>
+      <div class="my-hand" id="my-hand">
+        <!-- 我的手牌 -->
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="action-bar" id="action-bar">
+      <button id="pass-btn" class="action-btn">不要</button>
+      <button id="play-btn" class="action-btn primary">出牌</button>
+      <button id="bid-1-btn" class="action-btn" style="display:none;">抢 1 分</button>
+      <button id="bid-2-btn" class="action-btn" style="display:none;">抢 2 分</button>
+      <button id="bid-3-btn" class="action-btn" style="display:none;">抢 3 分</button>
+      <button id="no-bid-btn" class="action-btn" style="display:none;">不抢</button>
+    </div>
+  </div>
+
+  <!-- 结算页面 -->
+  <div id="result-screen" class="screen" style="display: none;">
+    <div class="result-card">
+      <h2 id="result-title"></h2>
+      <div class="result-details" id="result-details"></div>
+      <button id="back-lobby-btn" class="menu-btn primary">返回大厅</button>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
