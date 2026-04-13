@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>斗地主 - 完整版</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/history.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -272,6 +274,145 @@
       font-size: 16px;
       cursor: pointer;
     }
+    
+    /* 战绩页面 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #ffd700;
+    }
+    .stat-label {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+      margin-top: 5px;
+    }
+    .section {
+      background: rgba(255,255,255,0.05);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .game-record {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      margin: 8px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      border-left: 4px solid;
+    }
+    .game-record.win {
+      border-left-color: #4facfe;
+    }
+    .game-record.lose {
+      border-left-color: #f5576c;
+    }
+    .record-left {
+      flex: 1;
+    }
+    .record-result {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .record-role {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+    .record-right {
+      text-align: right;
+    }
+    .record-score {
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffd700;
+    }
+    .record-time {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+    
+    /* 排行榜 */
+    .my-rank {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .my-rank-title {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+    }
+    .my-rank-value {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .my-rank-score {
+      font-size: 18px;
+      color: #ffd700;
+    }
+    .leaderboard-list {
+      margin-bottom: 20px;
+    }
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      margin: 8px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+    }
+    .lb-rank {
+      width: 40px;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .rank-1 .lb-rank { color: #ffd700; }
+    .rank-2 .lb-rank { color: #c0c0c0; }
+    .rank-3 .lb-rank { color: #cd7f32; }
+    .lb-info {
+      flex: 1;
+      margin-left: 15px;
+    }
+    .lb-username {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .lb-games {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+    .lb-score {
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffd700;
+    }
   </style>
 </head>
 <body>
@@ -302,7 +443,15 @@
         📊 积分榜
       </button>
       
-      <button class="btn btn-secondary" onclick="dailyClaim()">
+      <button class="btn btn-secondary" onclick="HistoryUI.showHistory()">
+        📜 战绩
+      </button>
+      
+      <button class="btn btn-success" onclick="HistoryUI.showLeaderboard()">
+        🏆 排行榜
+      </button>
+      
+      <button class="btn btn-primary" onclick="dailyClaim()">
         📅 每日签到
       </button>
     </div>
@@ -491,6 +640,9 @@
     function backToLobby() {
       showScreen('lobby');
     }
+    
+    // 暴露给 HistoryUI 使用
+    window.showLobby = backToLobby;
     
     // 大厅功能
     function createRoom() {
@@ -717,6 +869,14 @@
       const scoreChange = win ? 20 : -10;
       state.score += scoreChange;
       document.getElementById('result-score').textContent = `积分变化：${scoreChange > 0 ? '+' : ''}${scoreChange}`;
+      
+      // 保存战绩
+      HistoryManager.addGame({
+        win: win,
+        scoreChange: Math.abs(scoreChange),
+        isLandlord: state.isLandlord,
+        role: state.isLandlord ? '地主' : '农民'
+      });
     }
     
     function quitGame() {
