@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>斗地主</title>
+  <title>斗地主 - 完整版</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -13,36 +13,62 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      color: white;
+      overflow-x: hidden;
+    }
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      padding: 20px;
+    }
+    .screen.active {
+      display: flex;
+    }
+    .header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
+      color: #667eea;
+      font-weight: bold;
+    }
+    .username {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .score {
+      color: #ffd700;
+      font-size: 14px;
     }
     .container {
       text-align: center;
-      padding: 20px;
       width: 100%;
       max-width: 400px;
     }
     h1 {
       font-size: 32px;
-      margin-bottom: 10px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    .user-info {
-      background: rgba(255,255,255,0.2);
-      padding: 15px;
-      border-radius: 10px;
       margin-bottom: 20px;
-      backdrop-filter: blur(10px);
-    }
-    .username {
-      font-size: 18px;
-      font-weight: bold;
-    }
-    .score {
-      font-size: 24px;
-      margin-top: 5px;
-      color: #ffd700;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     }
     .btn {
       display: block;
@@ -76,191 +102,646 @@
       background: rgba(255,255,255,0.3);
       color: white;
     }
-    .loading {
-      font-size: 18px;
-      padding: 20px;
+    .btn-danger {
+      background: linear-gradient(135deg, #fa709a 0%, #f5576c 100%);
+      color: white;
     }
-    .spinner {
+    
+    /* 游戏界面 */
+    .game-area {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px;
+    }
+    .top-area {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .player-card {
+      flex: 1;
+      background: rgba(255,255,255,0.1);
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+    .player-name {
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+    .player-cards {
+      font-size: 20px;
+      letter-spacing: 2px;
+    }
+    .landlord-cards {
+      background: rgba(255,215,0,0.2);
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .landlord-label {
+      font-size: 12px;
+      color: #ffd700;
+      margin-bottom: 5px;
+    }
+    .cards-display {
+      font-size: 24px;
+      letter-spacing: 3px;
+    }
+    .my-hand {
+      background: rgba(255,255,255,0.1);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      backdrop-filter: blur(10px);
+      min-height: 80px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px;
+    }
+    .card {
       display: inline-block;
-      width: 30px;
-      height: 30px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+      width: 40px;
+      height: 60px;
+      background: white;
+      color: black;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .card.red {
+      color: #d00;
+    }
+    .card.selected {
+      transform: translateY(-10px);
+      box-shadow: 0 5px 15px rgba(255,215,0,0.5);
+    }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+    .bid-btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    .pass-btn {
+      background: rgba(255,255,255,0.3);
+      color: white;
+    }
+    .play-btn {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+    }
+    .room-info {
+      background: rgba(255,255,255,0.1);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .room-code {
+      font-size: 32px;
+      font-weight: bold;
+      color: #ffd700;
+      letter-spacing: 5px;
+      margin: 15px 0;
+    }
+    .waiting-text {
+      font-size: 16px;
+      color: rgba(255,255,255,0.8);
+    }
+    .status-bar {
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .message-box {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      color: black;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      z-index: 1000;
+      max-width: 90%;
+      text-align: center;
+    }
+    .message-box h2 {
+      margin-bottom: 15px;
+    }
+    .message-box button {
+      margin-top: 20px;
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <div class="loading">
-      <div class="spinner"></div>
-      <p style="margin-top: 15px;">加载中...</p>
+  <!-- 大厅界面 -->
+  <div id="lobby-screen" class="screen active">
+    <div class="header">
+      <div class="user-info">
+        <div class="avatar" id="user-avatar">U</div>
+        <div>
+          <div class="username" id="username">玩家</div>
+          <div class="score" id="user-score">100 分</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="container">
+      <h1>🎮 斗地主</h1>
+      
+      <button class="btn btn-primary" onclick="createRoom()">
+        🏠 创建房间
+      </button>
+      
+      <button class="btn btn-success" onclick="showJoinRoom()">
+        🚪 加入房间
+      </button>
+      
+      <button class="btn btn-warning" onclick="viewScore()">
+        📊 积分榜
+      </button>
+      
+      <button class="btn btn-secondary" onclick="dailyClaim()">
+        📅 每日签到
+      </button>
+    </div>
+  </div>
+  
+  <!-- 创建房间界面 -->
+  <div id="create-room-screen" class="screen">
+    <div class="header">
+      <div class="user-info">
+        <div class="avatar" id="cr-avatar">U</div>
+        <div>
+          <div class="username" id="cr-username">玩家</div>
+        </div>
+      </div>
+      <button class="btn btn-danger" style="width:auto;padding:10px 20px;" onclick="backToLobby()">
+        返回
+      </button>
+    </div>
+    
+    <div class="container">
+      <div class="room-info">
+        <h2>🏠 房间已创建</h2>
+        <div class="room-code" id="room-code">A1B2C3</div>
+        <p class="waiting-text">等待玩家加入...</p>
+        <p class="waiting-text" id="player-count">当前玩家：1/3</p>
+      </div>
+      
+      <button class="btn btn-secondary" onclick="shareRoom()">
+        📤 分享房间
+      </button>
+      
+      <button class="btn btn-primary" onclick="startGame()">
+        🎮 开始游戏（3 人）
+      </button>
+    </div>
+  </div>
+  
+  <!-- 叫分界面 -->
+  <div id="bidding-screen" class="screen">
+    <div class="header">
+      <div class="user-info">
+        <div class="avatar" id="bid-avatar">U</div>
+        <div>
+          <div class="username" id="bid-username">玩家</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="status-bar" id="bidding-status">
+      请叫分
+    </div>
+    
+    <div class="landlord-cards">
+      <div class="landlord-label">🎁 底牌</div>
+      <div class="cards-display" id="landlord-cards">???</div>
+    </div>
+    
+    <div class="action-buttons">
+      <button class="action-btn bid-btn" onclick="bid(1)">1 分</button>
+      <button class="action-btn bid-btn" onclick="bid(2)">2 分</button>
+      <button class="action-btn bid-btn" onclick="bid(3)">3 分</button>
+      <button class="action-btn pass-btn" onclick="bid(0)">不要</button>
+    </div>
+  </div>
+  
+  <!-- 游戏界面 -->
+  <div id="game-screen" class="screen">
+    <div class="header">
+      <div class="user-info">
+        <div class="avatar" id="game-avatar">U</div>
+        <div>
+          <div class="username" id="game-username">玩家</div>
+        </div>
+      </div>
+      <button class="btn btn-danger" style="width:auto;padding:10px 20px;" onclick="quitGame()">
+        退出
+      </button>
+    </div>
+    
+    <div class="game-area">
+      <div class="top-area">
+        <div class="player-card">
+          <div class="player-name" id="player1-name">玩家 1</div>
+          <div class="player-cards" id="player1-cards">🂠🂠🂠</div>
+        </div>
+        <div class="player-card">
+          <div class="player-name" id="player2-name">玩家 2</div>
+          <div class="player-cards" id="player2-cards">🂠🂠🂠</div>
+        </div>
+      </div>
+      
+      <div class="my-hand" id="my-hand">
+        <!-- 手牌将在这里显示 -->
+      </div>
+      
+      <div class="status-bar" id="game-status">
+        请出牌
+      </div>
+      
+      <div class="action-buttons">
+        <button class="action-btn pass-btn" id="pass-btn" onclick="pass()">
+          不要
+        </button>
+        <button class="action-btn play-btn" id="play-btn" onclick="playCards()">
+          出牌
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 结果界面 -->
+  <div id="result-screen" class="screen">
+    <div class="container">
+      <h1 id="result-title">🎉 游戏结束</h1>
+      
+      <div class="room-info">
+        <h2 id="result-winner">地主获胜</h2>
+        <p id="result-score" style="margin-top:10px;color:#ffd700;">积分变化：+20</p>
+      </div>
+      
+      <button class="btn btn-primary" onclick="backToLobby()">
+        🏠 返回大厅
+      </button>
     </div>
   </div>
 
   <script>
-    let currentUserId = '';
+    // 全局状态
+    const state = {
+      user: null,
+      score: 100,
+      rank: '黑铁',
+      currentScreen: 'lobby',
+      roomCode: '',
+      players: [],
+      myHand: [],
+      landlordCards: [],
+      isLandlord: false,
+      currentPlayer: 0,
+      lastPlay: null,
+      selectedCards: []
+    };
     
     // 初始化
     window.addEventListener('DOMContentLoaded', () => {
-      console.log('🎮 Mini App 启动');
+      console.log('🎮 斗地主 Mini App 启动');
       
       const tg = window.Telegram.WebApp;
-      
-      // 告诉 Telegram 已准备好
       tg.ready();
       tg.expand();
       
       // 获取用户信息
       const user = tg.initDataUnsafe?.user || {};
-      currentUserId = user.id || 'unknown';
+      state.user = user;
       
       console.log('👤 用户:', user);
       
-      // 渲染大厅
-      renderLobby(user);
+      // 更新用户信息
+      updateUserInfo();
+    });
+    
+    function updateUserInfo() {
+      const username = state.user?.username || state.user?.first_name || '玩家';
+      const avatar = state.user?.first_name?.charAt(0).toUpperCase() || 'U';
       
-      // 监听 Bot 返回的消息
-      tg.onEvent('mainButtonClicked', () => {
-        console.log('主按钮点击');
+      document.getElementById('username').textContent = `@${username}`;
+      document.getElementById('user-score').textContent = `${state.score}分`;
+      document.getElementById('user-avatar').textContent = avatar;
+      
+      // 更新其他屏幕的用户信息
+      ['cr', 'bid', 'game'].forEach(prefix => {
+        const el = document.getElementById(`${prefix}-username`);
+        if (el) el.textContent = username;
+        const avatarEl = document.getElementById(`${prefix}-avatar`);
+        if (avatarEl) avatarEl.textContent = avatar;
       });
-    });
-    
-    // 监听来自 Bot 的消息
-    // Telegram WebApp 通过主应用发送数据回来
-    Telegram.WebApp.onEvent('mainButtonClicked', function() {
-      console.log('主按钮点击');
-    });
-    
-    // 接收 Bot 通过 web_app_data 返回的数据
-    // 由于 Telegram 限制，我们需要通过 URL 参数或其他方式接收
-    // 这里我们直接显示本地数据
-    
-    // 模拟积分数据（实际应该从 Bot 获取）
-    window.userScore = 100;
-    window.userRank = '黑铁';
-    
-    function renderLobby(user) {
-      const app = document.getElementById('app');
-      const username = user.username || user.first_name || '玩家';
-      const userId = user.id || 'unknown';
-      
-      app.innerHTML = `
-        <div class="container">
-          <h1>🎮 斗地主</h1>
-          
-          <div class="user-info">
-            <div class="username">@${username}</div>
-            <div class="score" id="score">加载中...</div>
-          </div>
-          
-          <button class="btn btn-primary" onclick="createRoom()">
-            🏠 创建房间
-          </button>
-          
-          <button class="btn btn-success" onclick="joinRoom()">
-            🚪 加入房间
-          </button>
-          
-          <button class="btn btn-warning" onclick="viewScore()">
-            📊 积分榜
-          </button>
-          
-          <button class="btn btn-secondary" onclick="dailyClaim()">
-            📅 每日签到
-          </button>
-        </div>
-      `;
-      
-      // 加载积分
-      loadScore(userId);
     }
     
-    function loadScore(userId) {
-      // 直接显示本地积分
-      const scoreEl = document.getElementById('score');
-      if (scoreEl) {
-        scoreEl.textContent = `${window.userScore}分`;
-      }
+    // 屏幕切换
+    function showScreen(screenName) {
+      document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+      document.getElementById(`${screenName}-screen`).classList.add('active');
+      state.currentScreen = screenName;
     }
     
+    function backToLobby() {
+      showScreen('lobby');
+    }
+    
+    // 大厅功能
     function createRoom() {
-      Telegram.WebApp.sendData(JSON.stringify({
-        action: 'create_room'
-      }));
-      alert('创建房间功能开发中...');
+      state.roomCode = generateRoomCode();
+      document.getElementById('room-code').textContent = state.roomCode;
+      document.getElementById('player-count').textContent = '当前玩家：1/3';
+      showScreen('create-room');
     }
     
-    function joinRoom() {
+    function generateRoomCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+    
+    function shareRoom() {
+      Telegram.WebApp.showPopup({
+        title: '分享房间',
+        message: `房间号：${state.roomCode}\n\n点击"复制"分享给好友`
+      });
+    }
+    
+    function showJoinRoom() {
       const code = prompt('请输入房间号:');
       if (code) {
-        Telegram.WebApp.sendData(JSON.stringify({
-          action: 'join_room',
-          room_code: code
-        }));
-        alert('加入房间功能开发中...');
+        // 模拟加入房间
+        state.roomCode = code.toUpperCase();
+        joinRoomSuccess();
       }
     }
     
-    function viewScore() {
-      // 直接显示积分（从本地存储或默认值）
-      const score = window.userScore || 100;
-      const rank = window.userRank || '黑铁';
+    function joinRoomSuccess() {
+      document.getElementById('room-code').textContent = state.roomCode;
+      document.getElementById('player-count').textContent = '当前玩家：3/3';
+      showScreen('create-room');
+      // 自动开始游戏
+      setTimeout(() => {
+        startGame();
+      }, 1000);
+    }
+    
+    function startGame() {
+      // 初始化游戏
+      initGame();
+      showScreen('bidding');
+      // 模拟叫分流程
+      setTimeout(() => {
+        document.getElementById('bidding-status').textContent = '轮到你了，请叫分';
+      }, 500);
+    }
+    
+    // 游戏逻辑
+    function initGame() {
+      // 生成扑克牌
+      const deck = generateDeck();
+      // 发牌
+      state.myHand = dealHand(deck);
+      state.landlordCards = deck.slice(51, 54); // 3 张底牌
+      
+      // 显示底牌（叫分阶段只显示背面）
+      document.getElementById('landlord-cards').textContent = '🂠 🂠 🂠';
+      
+      // 设置玩家信息
+      const players = ['玩家 1', '玩家 2', state.user?.first_name || '我'];
+      document.getElementById('player1-name').textContent = players[0];
+      document.getElementById('player2-name').textContent = players[1];
+      
+      // 渲染手牌
+      renderHand();
+    }
+    
+    function generateDeck() {
+      const suits = ['♠', '♥', '♣', '♦'];
+      const values = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
+      const deck = [];
+      
+      for (let suit of suits) {
+        for (let value of values) {
+          deck.push({ value, suit, isRed: ['♥', '♦'].includes(suit) });
+        }
+      }
+      deck.push({ value: '小王', suit: '', isRed: false });
+      deck.push({ value: '大王', suit: '', isRed: false });
+      
+      // 洗牌
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      
+      return deck;
+    }
+    
+    function dealHand(deck) {
+      return deck.slice(0, 17);
+    }
+    
+    function renderHand() {
+      const handEl = document.getElementById('my-hand');
+      handEl.innerHTML = '';
+      
+      state.myHand.sort((a, b) => {
+        const order = ['3','4','5','6','7','8','9','10','J','Q','K','A','2','小王','大王'];
+        return order.indexOf(a.value) - order.indexOf(b.value);
+      });
+      
+      state.myHand.forEach((card, index) => {
+        const cardEl = document.createElement('div');
+        cardEl.className = `card${card.isRed ? ' red' : ''}`;
+        cardEl.textContent = card.value;
+        cardEl.onclick = () => toggleCard(index);
+        handEl.appendChild(cardEl);
+      });
+    }
+    
+    function toggleCard(index) {
+      const cardEls = document.querySelectorAll('.my-hand .card');
+      cardEls[index].classList.toggle('selected');
+      
+      const cardIdx = state.selectedCards.indexOf(index);
+      if (cardIdx > -1) {
+        state.selectedCards.splice(cardIdx, 1);
+      } else {
+        state.selectedCards.push(index);
+      }
+    }
+    
+    function bid(score) {
+      Telegram.WebApp.sendData(JSON.stringify({
+        action: 'bid',
+        score: score
+      }));
+      
+      if (score > 0) {
+        Telegram.WebApp.showPopup({
+          title: '叫分',
+          message: `你叫了 ${score} 分`
+        });
+        // 成为地主
+        state.isLandlord = true;
+        state.myHand.push(...state.landlordCards);
+        renderHand();
+        
+        // 显示底牌
+        const cardsText = state.landlordCards.map(c => c.value).join(' ');
+        document.getElementById('landlord-cards').textContent = cardsText;
+        
+        // 进入出牌阶段
+        setTimeout(() => {
+          showScreen('game');
+          document.getElementById('game-status').textContent = '轮到你了，请出牌';
+        }, 1000);
+      } else {
+        Telegram.WebApp.showPopup({
+          title: '叫分',
+          message: '你选择不要'
+        });
+        // 等待其他玩家叫分
+        setTimeout(() => {
+          // 模拟其他玩家叫分
+          document.getElementById('bidding-status').textContent = '等待其他玩家叫分...';
+          setTimeout(() => {
+            showScreen('game');
+            document.getElementById('game-status').textContent = '等待其他玩家出牌';
+          }, 2000);
+        }, 1000);
+      }
+    }
+    
+    function pass() {
+      Telegram.WebApp.sendData(JSON.stringify({
+        action: 'pass'
+      }));
       
       Telegram.WebApp.showPopup({
+        title: '出牌',
+        message: '你选择不要'
+      });
+      
+      // 切换到下一个玩家
+      document.getElementById('game-status').textContent = '等待其他玩家出牌';
+    }
+    
+    function playCards() {
+      if (state.selectedCards.length === 0) {
+        Telegram.WebApp.showPopup({
+          title: '提示',
+          message: '请先选择要出的牌'
+        });
+        return;
+      }
+      
+      // 移除选中的牌
+      const cardsToRemove = state.selectedCards.sort((a, b) => b - a);
+      cardsToRemove.forEach(idx => {
+        state.myHand.splice(idx, 1);
+      });
+      state.selectedCards = [];
+      
+      renderHand();
+      
+      Telegram.WebApp.showPopup({
+        title: '出牌',
+        message: '你出了牌'
+      });
+      
+      // 检查是否赢了
+      if (state.myHand.length === 0) {
+        setTimeout(() => {
+          showResult(true);
+        }, 1000);
+      } else {
+        document.getElementById('game-status').textContent = '等待其他玩家出牌';
+      }
+    }
+    
+    function showResult(win) {
+      showScreen('result');
+      document.getElementById('result-title').textContent = win ? '🎉 你赢了！' : '😢 游戏结束';
+      document.getElementById('result-winner').textContent = win ? '恭喜你获胜！' : '再接再厉';
+      const scoreChange = win ? 20 : -10;
+      state.score += scoreChange;
+      document.getElementById('result-score').textContent = `积分变化：${scoreChange > 0 ? '+' : ''}${scoreChange}`;
+    }
+    
+    function quitGame() {
+      Telegram.WebApp.showConfirm('确定要退出游戏吗？', (confirmed) => {
+        if (confirmed) {
+          backToLobby();
+        }
+      });
+    }
+    
+    // 积分功能
+    function viewScore() {
+      Telegram.WebApp.showPopup({
         title: '积分榜',
-        message: `当前积分：${score}分\n段位：${rank}`
+        message: `当前积分：${state.score}分\n段位：${state.rank}`
       });
     }
     
     function dailyClaim() {
-      // 直接更新本地积分
-      window.userScore = (window.userScore || 100) + 10;
-      
-      // 更新显示
-      const scoreEl = document.getElementById('score');
-      if (scoreEl) {
-        scoreEl.textContent = `${window.userScore}分`;
-      }
-      
+      state.score += 10;
+      updateUserInfo();
       Telegram.WebApp.showPopup({
         title: '签到成功',
-        message: `✅ 获得 10 分\n当前积分：${window.userScore}分`
+        message: `✅ 获得 10 分\n当前积分：${state.score}分`
       });
-    }
-    
-    // 处理 Bot 返回的响应
-    function handleBotResponse(data) {
-      console.log('📩 Bot 响应:', data);
-      
-      if (data.type === 'score') {
-        const scoreEl = document.getElementById('score');
-        if (scoreEl) {
-          scoreEl.textContent = `${data.score}分 (${data.rank})`;
-        }
-        Telegram.WebApp.showPopup({
-          title: '积分榜',
-          message: `当前积分：${data.score}分\n段位：${data.rank}`
-        });
-      } else if (data.type === 'daily_claim') {
-        const scoreEl = document.getElementById('score');
-        if (scoreEl) {
-          scoreEl.textContent = `${data.new_score}分`;
-        }
-        Telegram.WebApp.showPopup({
-          title: '签到成功',
-          message: `✅ 获得 ${data.reward}分\n当前积分：${data.new_score}分`
-        });
-      } else if (data.type === 'error') {
-        Telegram.WebApp.showPopup({
-          title: '错误',
-          message: data.message
-        });
-      }
     }
   </script>
 </body>
