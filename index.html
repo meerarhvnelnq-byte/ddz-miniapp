@@ -416,6 +416,10 @@
       font-weight: bold;
       color: #ffd700;
     }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -440,6 +444,10 @@
       
       <button class="btn btn-success" onclick="showJoinRoom()">
         🚪 加入房间
+      </button>
+      
+      <button class="btn btn-success" onclick="showMultiplayerMode()" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+        🎮 多人对战
       </button>
       
       <button class="btn btn-warning" onclick="viewScore()">
@@ -585,6 +593,122 @@
       <button class="btn btn-primary" onclick="backToLobby()">
         🏠 返回大厅
       </button>
+    </div>
+  </div>
+  
+  <!-- 多人模式选择界面 -->
+  <div id="multiplayer-screen" class="screen">
+    <div class="container">
+      <h1>🎮 多人对战</h1>
+      
+      <div class="section" style="margin:20px 0;background:rgba(255,255,255,0.1);padding:20px;border-radius:15px;">
+        <h2 style="margin-bottom:15px;">🎯 游戏模式</h2>
+        
+        <button class="btn btn-primary" onclick="showMultiplayerCreateRoom()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          🏠 创建房间
+        </button>
+        
+        <button class="btn btn-success" onclick="showMultiplayerJoinRoom()" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+          🚪 加入房间
+        </button>
+        
+        <button class="btn btn-secondary" onclick="backToLobby()">
+          ← 返回大厅
+        </button>
+      </div>
+      
+      <div class="section" style="background:rgba(255,255,255,0.05);padding:15px;border-radius:10px;">
+        <h3 style="margin-bottom:10px;">📖 游戏说明</h3>
+        <ul style="text-align:left;font-size:14px;line-height:1.8;color:rgba(255,255,255,0.8);">
+          <li>✅ 3 人实时对战</li>
+          <li>✅ WebSocket 实时通信</li>
+          <li>✅ 断线自动重连</li>
+          <li>✅ 积分排行榜</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 多人创建房间界面 -->
+  <div id="multiplayer-create-screen" class="screen">
+    <div class="header">
+      <div class="user-info">
+        <div class="avatar" id="mp-create-avatar">U</div>
+        <div>
+          <div class="username" id="mp-create-username">玩家</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="container">
+      <h1>🏠 创建房间</h1>
+      
+      <div id="mp-create-status" style="margin:20px 0;text-align:center;">
+        <div class="section" style="background:rgba(255,255,255,0.1);padding:20px;border-radius:15px;">
+          <p style="font-size:16px;margin-bottom:10px;">正在创建房间...</p>
+          <div class="loader" style="width:40px;height:40px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 1s linear infinite;margin:20px auto;"></div>
+        </div>
+      </div>
+      
+      <div id="mp-create-success" style="display:none;margin:20px 0;">
+        <div class="section" style="background:rgba(79,172,254,0.2);padding:20px;border-radius:15px;border:2px solid #4facfe;">
+          <h2 style="color:#4facfe;margin-bottom:15px;">✅ 房间创建成功！</h2>
+          
+          <div style="background:rgba(0,0,0,0.3);padding:15px;border-radius:10px;margin-bottom:15px;">
+            <p style="font-size:14px;color:rgba(255,255,255,0.7);margin-bottom:5px;">房间号</p>
+            <p id="mp-room-code" style="font-size:32px;font-weight:bold;color:#ffd700;letter-spacing:5px;text-align:center;">A1B2C3</p>
+          </div>
+          
+          <div style="margin-bottom:15px;">
+            <p style="font-size:14px;color:rgba(255,255,255,0.7);">等待玩家加入...</p>
+            <p id="mp-player-count" style="font-size:24px;font-weight:bold;color:white;text-align:center;margin-top:10px;">1/3</p>
+          </div>
+          
+          <div id="mp-player-list" style="background:rgba(0,0,0,0.2);padding:10px;border-radius:8px;margin-bottom:15px;min-height:60px;">
+            <div style="padding:8px;background:rgba(79,172,254,0.3);border-radius:5px;margin-bottom:5px;">👤 我 (房主)</div>
+          </div>
+        </div>
+      </div>
+      
+      <div id="mp-create-actions" style="display:none;">
+        <button class="btn btn-success" onclick="shareRoomCode()" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          📤 分享房间号
+        </button>
+        
+        <button class="btn btn-primary" onclick="startMultiplayerGame()" id="mp-start-btn" disabled style="opacity:0.5;">
+          🎮 开始游戏
+        </button>
+        
+        <button class="btn btn-secondary" onclick="leaveMultiplayerRoom()">
+          离开房间
+        </button>
+      </div>
+      
+      <button class="btn btn-secondary" onclick="showMultiplayerMode()" style="margin-top:20px;">
+        ← 返回
+      </button>
+    </div>
+  </div>
+  
+  <!-- 多人加入房间界面 -->
+  <div id="multiplayer-join-screen" class="screen">
+    <div class="container">
+      <h1>🚪 加入房间</h1>
+      
+      <div class="section" style="margin:20px 0;background:rgba(255,255,255,0.1);padding:20px;border-radius:15px;">
+        <p style="font-size:16px;margin-bottom:15px;">请输入 6 位房间号：</p>
+        
+        <input type="text" id="mp-join-code" maxlength="6" placeholder="A1B2C3" 
+               style="width:100%;padding:15px;font-size:24px;text-align:center;letter-spacing:5px;border:2px solid rgba(255,255,255,0.3);border-radius:10px;background:rgba(0,0,0,0.3);color:white;margin-bottom:20px;" />
+        
+        <button class="btn btn-success" onclick="joinMultiplayerRoomByCode()" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+          🚪 加入房间
+        </button>
+        
+        <button class="btn btn-secondary" onclick="showMultiplayerMode()" style="margin-top:10px;">
+          ← 返回
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1224,6 +1348,191 @@
         title: '签到成功',
         message: `✅ 获得 10 分\n当前积分：${state.score}分`
       });
+    }
+    
+    // ========== 多人对战功能 ==========
+    
+    // 显示多人模式
+    function showMultiplayerMode() {
+      showScreen('multiplayer');
+    }
+    
+    // 显示创建房间
+    function showMultiplayerCreateRoom() {
+      showScreen('multiplayer-create');
+      
+      // 初始化 WebSocket 连接
+      initMultiplayerConnection();
+      
+      // 创建房间
+      setTimeout(() => {
+        createMultiplayerRoom();
+      }, 500);
+    }
+    
+    // 显示加入房间
+    function showMultiplayerJoinRoom() {
+      showScreen('multiplayer-join');
+      document.getElementById('mp-join-code').value = '';
+    }
+    
+    // 初始化多人连接
+    function initMultiplayerConnection() {
+      const userId = state.user?.id || 'player_' + Date.now();
+      const userInfo = {
+        username: state.user?.first_name || state.user?.username || '玩家',
+        avatar: state.user?.photo_url || ''
+      };
+      
+      MultiplayerClient.connect(userId, userInfo);
+      
+      // 设置回调
+      MultiplayerClient.onConnect = () => {
+        console.log('✅ WebSocket 连接成功');
+      };
+      
+      MultiplayerClient.onRoomCreated = (data) => {
+        console.log('🏠 房间创建成功:', data.room);
+        showRoomCreated(data.room);
+      };
+      
+      MultiplayerClient.onRoomJoined = (data) => {
+        console.log('🚪 加入房间成功:', data.room);
+        showRoomJoined(data.room);
+      };
+      
+      MultiplayerClient.onPlayerJoined = (data) => {
+        console.log('👤 有新玩家加入:', data.room);
+        updatePlayerList(data.room);
+      };
+      
+      MultiplayerClient.onPlayerLeft = (data) => {
+        console.log('👋 玩家离开:', data.user_id);
+        updatePlayerList(data.room);
+      };
+      
+      MultiplayerClient.onGameStarted = (data) => {
+        console.log('🎮 游戏开始:', data.game_state);
+        startMultiplayerGameFromServer(data.game_state);
+      };
+    }
+    
+    // 创建多人房间
+    function createMultiplayerRoom() {
+      MultiplayerClient.createRoom({
+        username: state.user?.first_name || '玩家',
+        avatar: state.user?.photo_url || ''
+      });
+    }
+    
+    // 显示房间创建成功
+    function showRoomCreated(room) {
+      document.getElementById('mp-create-status').style.display = 'none';
+      document.getElementById('mp-create-success').style.display = 'block';
+      document.getElementById('mp-create-actions').style.display = 'block';
+      
+      document.getElementById('mp-room-code').textContent = room.room_id;
+      document.getElementById('mp-player-count').textContent = `${room.player_count}/${room.max_players}`;
+      
+      // 更新玩家列表
+      updatePlayerList(room);
+      
+      // 如果满员，启用开始按钮
+      if (room.player_count >= room.max_players) {
+        const startBtn = document.getElementById('mp-start-btn');
+        startBtn.disabled = false;
+        startBtn.style.opacity = '1';
+      }
+    }
+    
+    // 更新玩家列表
+    function updatePlayerList(room) {
+      const playerListEl = document.getElementById('mp-player-list');
+      playerListEl.innerHTML = '';
+      
+      room.players.forEach((player, index) => {
+        const isOwner = player.user_id === room.owner_id;
+        const playerEl = document.createElement('div');
+        playerEl.style.padding = '8px';
+        playerEl.style.background = index === 0 ? 'rgba(79,172,254,0.3)' : 'rgba(255,255,255,0.1)';
+        playerEl.style.borderRadius = '5px';
+        playerEl.style.marginBottom = '5px';
+        playerEl.innerHTML = `👤 ${player.username || '玩家'} ${isOwner ? '(房主)' : ''}`;
+        playerListEl.appendChild(playerEl);
+      });
+      
+      document.getElementById('mp-player-count').textContent = `${room.player_count}/${room.max_players}`;
+    }
+    
+    // 加入房间成功
+    function showRoomJoined(room) {
+      document.getElementById('mp-create-status').style.display = 'none';
+      document.getElementById('mp-create-success').style.display = 'block';
+      document.getElementById('mp-create-actions').style.display = 'block';
+      
+      document.getElementById('mp-room-code').textContent = room.room_id;
+      updatePlayerList(room);
+    }
+    
+    // 通过房间号加入
+    function joinMultiplayerRoomByCode() {
+      const roomCode = document.getElementById('mp-join-code').value.toUpperCase().trim();
+      
+      if (!roomCode || roomCode.length !== 6) {
+        Telegram.WebApp.showPopup({
+          title: '提示',
+          message: '请输入 6 位房间号'
+        });
+        return;
+      }
+      
+      MultiplayerClient.joinRoom(roomCode, {
+        username: state.user?.first_name || '玩家',
+        avatar: state.user?.photo_url || ''
+      });
+      
+      // 切换到创建房间界面（复用）
+      showScreen('multiplayer-create');
+      document.getElementById('mp-create-status').style.display = 'block';
+      document.getElementById('mp-create-success').style.display = 'none';
+      document.getElementById('mp-create-actions').style.display = 'none';
+    }
+    
+    // 分享房间号
+    function shareRoomCode() {
+      const roomCode = document.getElementById('mp-room-code').textContent;
+      const text = `快来一起玩斗地主！房间号：${roomCode}`;
+      
+      if (Telegram.WebApp.shareUrl) {
+        Telegram.WebApp.shareUrl(text);
+      } else {
+        // 复制到剪贴板
+        navigator.clipboard?.writeText(text).then(() => {
+          Telegram.WebApp.showPopup({
+            title: '分享',
+            message: '房间号已复制到剪贴板'
+          });
+        });
+      }
+    }
+    
+    // 开始多人游戏
+    function startMultiplayerGame() {
+      MultiplayerClient.startGame();
+    }
+    
+    // 从服务器启动游戏
+    function startMultiplayerGameFromServer(gameState) {
+      // 初始化游戏状态
+      initGame();
+      showScreen('bidding');
+      document.getElementById('bidding-status').textContent = '游戏开始，请叫分';
+    }
+    
+    // 离开房间
+    function leaveMultiplayerRoom() {
+      MultiplayerClient.leaveRoom();
+      backToLobby();
     }
   </script>
 </body>
