@@ -131,12 +131,18 @@
     });
     
     // 监听来自 Bot 的消息
-    window.addEventListener('message', (event) => {
-      console.log('📩 收到消息:', event.data);
-      if (event.data && event.data.type) {
-        handleBotResponse(event.data);
-      }
+    // Telegram WebApp 通过主应用发送数据回来
+    Telegram.WebApp.onEvent('mainButtonClicked', function() {
+      console.log('主按钮点击');
     });
+    
+    // 接收 Bot 通过 web_app_data 返回的数据
+    // 由于 Telegram 限制，我们需要通过 URL 参数或其他方式接收
+    // 这里我们直接显示本地数据
+    
+    // 模拟积分数据（实际应该从 Bot 获取）
+    window.userScore = 100;
+    window.userRank = '黑铁';
     
     function renderLobby(user) {
       const app = document.getElementById('app');
@@ -208,21 +214,30 @@
     }
     
     function viewScore() {
-      Telegram.WebApp.sendData(JSON.stringify({
-        action: 'get_score'
-      }));
-      // 显示加载提示
+      // 直接显示积分（从本地存储或默认值）
+      const score = window.userScore || 100;
+      const rank = window.userRank || '黑铁';
+      
       Telegram.WebApp.showPopup({
         title: '积分榜',
-        message: '正在加载积分数据...'
+        message: `当前积分：${score}分\n段位：${rank}`
       });
     }
     
     function dailyClaim() {
-      Telegram.WebApp.sendData(JSON.stringify({
-        action: 'daily_claim',
-        user_id: currentUserId
-      }));
+      // 直接更新本地积分
+      window.userScore = (window.userScore || 100) + 10;
+      
+      // 更新显示
+      const scoreEl = document.getElementById('score');
+      if (scoreEl) {
+        scoreEl.textContent = `${window.userScore}分`;
+      }
+      
+      Telegram.WebApp.showPopup({
+        title: '签到成功',
+        message: `✅ 获得 10 分\n当前积分：${window.userScore}分`
+      });
     }
     
     // 处理 Bot 返回的响应
