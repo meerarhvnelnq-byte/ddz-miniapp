@@ -181,17 +181,10 @@
     }
     
     function loadScore(userId) {
-      // 简单模拟积分显示
+      // 直接显示本地积分
       const scoreEl = document.getElementById('score');
       if (scoreEl) {
-        // 从 Telegram 发送数据到 bot
-        Telegram.WebApp.sendData(JSON.stringify({
-          action: 'get_score',
-          user_id: userId
-        }));
-        
-        // 显示默认积分
-        scoreEl.textContent = '100 分';
+        scoreEl.textContent = `${window.userScore}分`;
       }
     }
     
