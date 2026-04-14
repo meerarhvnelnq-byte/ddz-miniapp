@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>斗地主 - API 配置</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(255,255,255,0.1);
+      padding: 30px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 { margin-bottom: 20px; text-align: center; }
+    .info {
+      background: rgba(0,0,0,0.3);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .current {
+      color: #4ade80;
+      word-break: break-all;
+      margin: 10px 0;
+      font-family: monospace;
+    }
+    input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.3);
+      color: white;
+      font-size: 14px;
+      margin-bottom: 15px;
+      font-family: monospace;
+    }
+    input:focus {
+      outline: none;
+      border-color: #4ade80;
+    }
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+    }
+    .test-result {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    .success { background: rgba(74, 222, 128, 0.3); }
+    .error { background: rgba(248, 113, 113, 0.3); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 API 配置</h1>
+    
+    <div class="info">
+      <p>📊 当前 API 地址：</p>
+      <p class="current" id="current-api">加载中...</p>
+    </div>
+    
+    <div class="info">
+      <p>📝 最新 Tunnel 地址（从日志获取）：</p>
+      <p style="font-size:12px;color:rgba(255,255,255,0.7);margin:10px 0;">
+        运行命令获取最新地址：<br>
+        <code style="background:rgba(0,0,0,0.3);padding:5px;border-radius:5px;display:block;margin:10px 0;">
+          journalctl -u cloudflared-tunnel --no-pager | grep trycloudflare.com | tail -1
+        </code>
+      </p>
+      <input type="text" id="new-api" placeholder="https://xxx.trycloudflare.com/api/bot-game" />
+    </div>
+    
+    <button class="btn btn-primary" onclick="testCurrent()">🧪 测试当前地址</button>
+    <button class="btn btn-success" onclick="updateApi()">💾 更新 API 地址</button>
+    
+    <div id="test-result"></div>
+  </div>
+  
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    
+    // 从 localStorage 加载 API 地址
+    let currentApi = localStorage.getItem('ddz_api_endpoint') || 'https://period-zip-homepage-purchased.trycloudflare.com/api/bot-game';
+    
+    document.getElementById('current-api').textContent = currentApi;
+    
+    async function testCurrent() {
+      const resultDiv = document.getElementById('test-result');
+      resultDiv.className = 'test-result';
+      resultDiv.textContent = '🔄 测试中...';
+      
+      try {
+        const response = await fetch(currentApi, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create_multiplayer_room',
+            user: { id: tg.initDataUnsafe?.user?.id || 123456 }
+          })
+        });
+        
+        const result = await response.json();
+        console.log('测试结果:', result);
+        
+        if (result.success) {
+          resultDiv.className = 'test-result success';
+          resultDiv.innerHTML = `
+            ✅ 测试成功！<br>
+            房间号：<strong>${result.roomId}</strong><br>
+            玩家数：${result.player_count}/${result.max_players}
+          `;
+        } else {
+          resultDiv.className = 'test-result error';
+          resultDiv.textContent = `❌ 测试失败：${result.error}`;
+        }
+      } catch (error) {
+        resultDiv.className = 'test-result error';
+        resultDiv.textContent = `❌ 连接失败：${error.message}`;
+      }
+    }
+    
+    function updateApi() {
+      const newApi = document.getElementById('new-api').value.trim();
+      
+      if (!newApi) {
+        alert('请输入新的 API 地址');
+        return;
+      }
+      
+      if (!newApi.includes('trycloudflare.com')) {
+        alert('地址必须包含 trycloudflare.com');
+        return;
+      }
+      
+      localStorage.setItem('ddz_api_endpoint', newApi);
+      currentApi = newApi;
+      document.getElementById('current-api').textContent = newApi;
+      
+      alert('✅ API 地址已更新！\n\n请刷新页面或重新打开 Mini App');
+    }
+  </script>
+</body>
+</html>

@@ -9,8 +9,8 @@ const HttpBridge = {
     console.log('🌐 HttpBridge 初始化，userId:', this.userId);
   },
   
-  // Cloudflare Tunnel HTTPS 地址（动态更新）
-  apiEndpoint: 'https://period-zip-homepage-purchased.trycloudflare.com/api/bot-game',
+  // Cloudflare Tunnel HTTPS 地址（从 localStorage 读取，支持动态更新）
+  apiEndpoint: localStorage.getItem('ddz_api_endpoint') || 'https://period-zip-homepage-purchased.trycloudflare.com/api/bot-game',
   
   init() {
     this.userId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
