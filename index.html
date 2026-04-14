@@ -436,35 +436,35 @@
     </div>
     
     <div class="container">
-      <h1>🎮 斗地主</h1>
+      <h1>🎮 斗地主多人对战</h1>
       
-      <button class="btn btn-primary" onclick="createRoom()">
-        🏠 创建房间
-      </button>
+      <div class="section" style="background:rgba(255,255,255,0.1);padding:20px;border-radius:15px;margin-bottom:20px;">
+        <h2 style="margin-bottom:15px;">🎯 快速开始</h2>
+        
+        <button class="btn btn-primary" onclick="showMultiplayerMode()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);font-size:20px;padding:20px;">
+          🎮 多人对战
+        </button>
+      </div>
       
-      <button class="btn btn-success" onclick="showJoinRoom()">
-        🚪 加入房间
-      </button>
-      
-      <button class="btn btn-success" onclick="showMultiplayerMode()" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-        🎮 多人对战
-      </button>
-      
-      <button class="btn btn-warning" onclick="viewScore()">
-        📊 积分榜
-      </button>
-      
-      <button class="btn btn-secondary" onclick="HistoryUI.showHistory()">
-        📜 战绩
-      </button>
-      
-      <button class="btn btn-success" onclick="HistoryUI.showLeaderboard()">
-        🏆 排行榜
-      </button>
-      
-      <button class="btn btn-primary" onclick="dailyClaim()">
-        📅 每日签到
-      </button>
+      <div class="section" style="background:rgba(255,255,255,0.05);padding:15px;border-radius:10px;">
+        <h3 style="margin-bottom:10px;">📊 我的数据</h3>
+        
+        <button class="btn btn-warning" onclick="viewScore()">
+          📊 积分榜
+        </button>
+        
+        <button class="btn btn-secondary" onclick="HistoryUI.showHistory()">
+          📜 战绩
+        </button>
+        
+        <button class="btn btn-success" onclick="HistoryUI.showLeaderboard()">
+          🏆 排行榜
+        </button>
+        
+        <button class="btn btn-primary" onclick="dailyClaim()">
+          📅 每日签到
+        </button>
+      </div>
     </div>
   </div>
   
@@ -500,7 +500,7 @@
     </div>
   </div>
   
-  <!-- 叫分界面 -->
+  <!-- 叫分界面（多人对战用） -->
   <div id="bidding-screen" class="screen">
     <div class="header">
       <div class="user-info">
@@ -521,14 +521,14 @@
     </div>
     
     <div class="action-buttons">
-      <button class="action-btn bid-btn" onclick="bid(1)">1 分</button>
-      <button class="action-btn bid-btn" onclick="bid(2)">2 分</button>
-      <button class="action-btn bid-btn" onclick="bid(3)">3 分</button>
-      <button class="action-btn pass-btn" onclick="bid(0)">不要</button>
+      <button class="action-btn bid-btn" onclick="multiplayerBid(1)">1 分</button>
+      <button class="action-btn bid-btn" onclick="multiplayerBid(2)">2 分</button>
+      <button class="action-btn bid-btn" onclick="multiplayerBid(3)">3 分</button>
+      <button class="action-btn pass-btn" onclick="multiplayerBid(0)">不要</button>
     </div>
   </div>
   
-  <!-- 游戏界面 -->
+  <!-- 游戏界面（多人对战用） -->
   <div id="game-screen" class="screen">
     <div class="header">
       <div class="user-info">
@@ -567,13 +567,13 @@
       </div>
       
       <div class="action-buttons">
-        <button class="action-btn pass-btn" id="pass-btn" onclick="pass()">
+        <button class="action-btn pass-btn" id="pass-btn" onclick="multiplayerPass()">
           不要
         </button>
-        <button class="action-btn play-btn" id="play-btn" onclick="playCards()">
+        <button class="action-btn play-btn" id="play-btn" onclick="multiplayerPlayCards()">
           出牌
         </button>
-        <button class="action-btn ${state.autoPlay ? 'btn-warning' : 'btn-secondary'}" id="auto-btn" onclick="toggleAutoPlay()" style="width:auto;">
+        <button class="action-btn ${state.autoPlay ? 'btn-warning' : 'btn-secondary'}" id="auto-btn" onclick="toggleMultiplayerAutoPlay()" style="width:auto;">
           🤖 ${state.autoPlay ? '托管中' : '托管'}
         </button>
       </div>
@@ -1538,6 +1538,88 @@
     function leaveMultiplayerRoom() {
       MultiplayerClient.leaveRoom();
       backToLobby();
+    }
+    
+    // ========== 多人对战游戏函数 ==========
+    
+    // 多人叫分
+    function multiplayerBid(score) {
+      MultiplayerClient.bid(score);
+      
+      if (score > 0) {
+        Telegram.WebApp.showPopup({
+          title: '叫分',
+          message: `你叫了 ${score} 分`
+        });
+      } else {
+        Telegram.WebApp.showPopup({
+          title: '叫分',
+          message: '你选择不要'
+        });
+      }
+    }
+    
+    // 多人出牌
+    function multiplayerPlayCards() {
+      if (state.selectedCards.length === 0) {
+        Telegram.WebApp.showPopup({
+          title: '提示',
+          message: '请先选择要出的牌'
+        });
+        return;
+      }
+      
+      const selectedCards = state.selectedCards.map(idx => state.myHand[idx]);
+      
+      // 发送出牌消息
+      MultiplayerClient.playCards(selectedCards);
+      
+      // 播放动画和音效
+      const handEl = document.getElementById('my-hand');
+      const centerArea = document.querySelector('.game-area') || handEl;
+      state.selectedCards.forEach((idx, i) => {
+        setTimeout(() => {
+          const cardEls = handEl.querySelectorAll('.card');
+          if (cardEls[idx]) {
+            AnimationManager.playCardAnimation(cardEls[idx], centerArea);
+          }
+        }, i * 100);
+      });
+      
+      // 移除牌
+      state.selectedCards.sort((a, b) => b - a);
+      state.selectedCards.forEach(idx => {
+        state.myHand.splice(idx, 1);
+      });
+      state.selectedCards = [];
+      renderHand();
+      
+      // 检查是否获胜
+      if (state.myHand.length === 0) {
+        // 游戏结束
+        MultiplayerClient.gameResult({
+          winner_id: MultiplayerClient.userId,
+          landlord_id: state.isLandlord ? MultiplayerClient.userId : 'other',
+          bomb_count: state.bombCount,
+          is_spring: state.isSpring,
+          is_double_spring: state.isDoubleSpring
+        });
+      }
+    }
+    
+    // 多人不要
+    function multiplayerPass() {
+      MultiplayerClient.pass();
+      SoundManager.playClick();
+    }
+    
+    // 多人托管
+    function toggleMultiplayerAutoPlay() {
+      state.autoPlay = !state.autoPlay;
+      const btn = document.getElementById('auto-btn');
+      btn.textContent = state.autoPlay ? '🤖 托管中' : '🤖 托管';
+      btn.className = `action-btn ${state.autoPlay ? 'btn-warning' : 'btn-secondary'}`;
+      AnimationManager.buttonClickAnimation(btn);
     }
     
     // 显示多人游戏结果
