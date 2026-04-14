@@ -9,6 +9,9 @@ const HttpBridge = {
     console.log('🌐 HttpBridge 初始化，userId:', this.userId);
   },
   
+  // Cloudflare Tunnel HTTPS 地址（动态更新）
+  apiEndpoint: 'https://generates-tourism-sent-installed.trycloudflare.com/api/bot-game',
+  
   // 发送请求到 Bot
   async sendRequest(action, data = {}) {
     const payload = {
@@ -20,9 +23,9 @@ const HttpBridge = {
     
     console.log('📤 发送请求:', payload);
     
-    // 使用 fetch 请求 API 服务器
+    // 使用 fetch 请求 Cloudflare Tunnel
     try {
-      const response = await fetch('http://43.160.220.95:5000/api/bot-game', {
+      const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
