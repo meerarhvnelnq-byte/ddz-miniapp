@@ -1415,6 +1415,11 @@
         console.log('🎮 游戏开始:', data.game_state);
         startMultiplayerGameFromServer(data.game_state);
       };
+      
+      MultiplayerClient.onGameResult = (data) => {
+        console.log('🏆 游戏结果:', data.result);
+        showMultiplayerGameResult(data.result);
+      };
     }
     
     // 创建多人房间
@@ -1533,6 +1538,81 @@
     function leaveMultiplayerRoom() {
       MultiplayerClient.leaveRoom();
       backToLobby();
+    }
+    
+    // 显示多人游戏结果
+    function showMultiplayerGameResult(result) {
+      console.log('🏆 游戏结果:', result);
+      
+      // 计算积分
+      const scoreChange = calculateMultiplayerScore(result);
+      state.score += scoreChange;
+      
+      // 更新用户信息
+      updateUserInfo();
+      
+      // 保存战绩
+      HistoryManager.addGame({
+        win: result.win,
+        scoreChange: Math.abs(scoreChange),
+        isLandlord: result.isLandlord,
+        role: result.isLandlord ? '地主' : '农民',
+        bombCount: result.bombCount || 0,
+        isSpring: result.isSpring || false,
+        isDoubleSpring: result.isDoubleSpring || false,
+        multiplayer: true,
+        timestamp: Date.now()
+      });
+      
+      // 显示结果界面
+      showScreen('result');
+      
+      document.getElementById('result-title').textContent = result.win ? '🎉 你赢了！' : '😢 游戏结束';
+      document.getElementById('result-winner').textContent = result.win ? '恭喜你获胜！' : '再接再厉';
+      
+      let reasonText = result.reasons && result.reasons.length > 0 ? `\n(${result.reasons.join(', ')})` : '';
+      document.getElementById('result-score').textContent = `积分变化：${scoreChange > 0 ? '+' : ''}${scoreChange}${reasonText}`;
+      
+      // 播放音效和动画
+      if (result.win) {
+        SoundManager.playWin();
+        const resultScreen = document.getElementById('result-screen');
+        AnimationManager.playConfetti(resultScreen);
+      } else {
+        SoundManager.playLose();
+      }
+    }
+    
+    // 计算多人游戏积分
+    function calculateMultiplayerScore(result) {
+      const baseScore = result.win ? 20 : -10;  // 基础分
+      let multiplier = 1;
+      const reasons = [];
+      
+      // 地主翻倍
+      if (result.isLandlord) {
+        multiplier *= 2;
+        reasons.push('地主 x2');
+      }
+      
+      // 炸弹翻倍
+      if (result.bombCount > 0) {
+        multiplier *= Math.pow(2, result.bombCount);
+        reasons.push(`炸弹 x${result.bombCount}`);
+      }
+      
+      // 春天/反春
+      if (result.isSpring) {
+        multiplier *= 2;
+        reasons.push('春天 x2');
+      }
+      if (result.isDoubleSpring) {
+        multiplier *= 2;
+        reasons.push('反春 x2');
+      }
+      
+      result.reasons = reasons;
+      return baseScore * multiplier;
     }
   </script>
 </body>
