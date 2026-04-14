@@ -78,22 +78,26 @@ const MultiplayerClient = {
   // 处理消息
   handleMessage(data) {
     const handlers = {
-      'room_created': (d) => this.onRoomCreated(d),
-      'room_joined': (d) => this.onRoomJoined(d),
-      'player_joined': (d) => this.onPlayerJoined(d),
-      'player_left': (d) => this.onPlayerLeft(d),
-      'player_disconnected': (d) => this.onPlayerDisconnected(d),
-      'game_started': (d) => this.onGameStarted(d),
-      'player_bid': (d) => this.onPlayerBid(d),
-      'cards_played': (d) => this.onCardsPlayed(d),
-      'player_passed': (d) => this.onPlayerPassed(d),
-      'chat_message': (d) => this.onChatMessage(d),
-      'heartbeat_ack': (d) => this.onHeartbeatAck(d)
+      'room_created': (d) => this.onRoomCreated && this.onRoomCreated(d),
+      'room_joined': (d) => this.onRoomJoined && this.onRoomJoined(d),
+      'player_joined': (d) => this.onPlayerJoined && this.onPlayerJoined(d),
+      'player_left': (d) => this.onPlayerLeft && this.onPlayerLeft(d),
+      'player_disconnected': (d) => this.onPlayerDisconnected && this.onPlayerDisconnected(d),
+      'game_started': (d) => this.onGameStarted && this.onGameStarted(d),
+      'player_bid': (d) => this.onPlayerBid && this.onPlayerBid(d),
+      'cards_played': (d) => this.onCardsPlayed && this.onCardsPlayed(d),
+      'player_passed': (d) => this.onPlayerPassed && this.onPlayerPassed(d),
+      'chat_message': (d) => this.onChatMessage && this.onChatMessage(d),
+      'heartbeat_ack': (d) => this.onHeartbeatAck && this.onHeartbeatAck(d),
+      'game_result': (d) => this.onGameResult && this.onGameResult(d),
+      'error': (d) => this.onError && this.onError(d)
     };
     
     const handler = handlers[data.type];
     if (handler) {
       handler(data);
+    } else {
+      console.log('⚠️ 未知消息类型:', data.type);
     }
   },
   
@@ -111,6 +115,8 @@ const MultiplayerClient = {
   onPlayerPassed: null,
   onChatMessage: null,
   onHeartbeatAck: null,
+  onGameResult: null,
+  onError: null,
   
   // 发送消息
   send(action, data = {}) {
@@ -175,6 +181,11 @@ const MultiplayerClient = {
   // 聊天
   chat(message) {
     this.send('chat', { message, room_id: this.roomId });
+  },
+  
+  // 游戏结果
+  gameResult(result) {
+    this.send('game_result', { result, room_id: this.roomId });
   },
   
   // 心跳
