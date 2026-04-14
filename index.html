@@ -601,6 +601,11 @@
     <div class="container">
       <h1>🎮 多人对战</h1>
       
+      <div style="margin:20px 0;padding:10px;background:rgba(0,0,0,0.3);border-radius:10px;font-size:12px;">
+        <p>🔍 调试信息：</p>
+        <p id="debug-info">等待操作...</p>
+      </div>
+      
       <div class="section" style="margin:20px 0;background:rgba(255,255,255,0.1);padding:20px;border-radius:15px;">
         <h2 style="margin-bottom:15px;">🎯 游戏模式</h2>
         
@@ -1355,11 +1360,20 @@
     // 显示多人模式
     function showMultiplayerMode() {
       showScreen('multiplayer');
+      updateDebugInfo('多人模式界面已显示');
+    }
+    
+    function updateDebugInfo(msg) {
+      const el = document.getElementById('debug-info');
+      if (el) {
+        el.textContent = msg;
+      }
+      console.log('🔍', msg);
     }
     
     // 显示创建房间
     function showMultiplayerCreateRoom() {
-      console.log('🏠 显示创建房间界面');
+      updateDebugInfo('正在初始化 Telegram Bridge...');
       showScreen('multiplayer-create');
       
       // 重置状态
@@ -1421,8 +1435,11 @@
     // 创建多人房间
     function createMultiplayerRoom() {
       console.log('🏠 创建多人房间');
+      console.log('📊 TelegramBridge 状态:', TelegramBridge.connected);
+      
       try {
         TelegramBridge.createRoom();
+        console.log('✅ 已发送创建房间请求');
       } catch (error) {
         console.error('创建房间失败:', error);
         Telegram.WebApp.showPopup({
