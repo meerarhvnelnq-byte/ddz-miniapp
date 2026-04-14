@@ -12,6 +12,11 @@ const HttpBridge = {
   // Cloudflare Tunnel HTTPS 地址（动态更新）
   apiEndpoint: 'https://period-zip-homepage-purchased.trycloudflare.com/api/bot-game',
   
+  init() {
+    this.userId = window.Telegram.WebApp.initDataUnsafe?.user?.id;
+    console.log('🌐 HttpBridge 初始化，userId:', this.userId, 'apiEndpoint:', this.apiEndpoint);
+  },
+  
   // 发送请求到 Bot
   async sendRequest(action, data = {}) {
     const payload = {
@@ -22,6 +27,7 @@ const HttpBridge = {
     };
     
     console.log('📤 发送请求:', payload);
+    console.log('🌐 API 端点:', this.apiEndpoint);
     
     // 使用 fetch 请求 Cloudflare Tunnel
     try {
@@ -33,12 +39,14 @@ const HttpBridge = {
         body: JSON.stringify(payload)
       });
       
+      console.log('📊 响应状态:', response.status);
       const result = await response.json();
       console.log('📩 收到响应:', result);
       return result;
       
     } catch (error) {
       console.error('❌ 请求失败:', error);
+      console.error('❌ 错误详情:', error.message);
       throw error;
     }
   },
