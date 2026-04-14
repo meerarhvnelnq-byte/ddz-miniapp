@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>斗地主 - 诊断工具</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: monospace;
+      background: #000;
+      color: #0f0;
+      padding: 20px;
+      font-size: 12px;
+    }
+    .log { margin: 10px 0; }
+    .success { color: #0f0; }
+    .error { color: #f00; }
+    .warn { color: #ff0; }
+    .info { color: #0ff; }
+  </style>
+</head>
+<body>
+  <div id="logs"></div>
+  
+  <script>
+    const logs = document.getElementById('logs');
+    
+    function log(msg, type = 'info') {
+      const div = document.createElement('div');
+      div.className = `log ${type}`;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logs.appendChild(div);
+      console.log(msg);
+    }
+    
+    async function diagnose() {
+      log('开始诊断...', 'info');
+      
+      // 1. 检查 Telegram WebApp
+      log('检查 Telegram WebApp...', 'info');
+      if (window.Telegram && window.Telegram.WebApp) {
+        log('✅ Telegram WebApp 可用', 'success');
+        log(`用户 ID: ${window.Telegram.WebApp.initDataUnsafe?.user?.id}`, 'info');
+      } else {
+        log('❌ Telegram WebApp 不可用', 'error');
+      }
+      
+      // 2. 测试 API 连接
+      const apis = [
+        'https://period-zip-homepage-purchased.trycloudflare.com/api/bot-game',
+        'https://meerarhvnelnq-byte.github.io/ddz-miniapp/'
+      ];
+      
+      for (const api of apis) {
+        log(`测试 API: ${api}`, 'info');
+        try {
+          const startTime = Date.now();
+          const response = await fetch(api, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'create_multiplayer_room',
+              user: { id: window.Telegram.WebApp.initDataUnsafe?.user?.id || 123456 }
+            })
+          });
+          const endTime = Date.now();
+          
+          log(`HTTP ${response.status} (${endTime - startTime}ms)`, response.ok ? 'success' : 'warn');
+          
+          const result = await response.json();
+          log(`响应：${JSON.stringify(result)}`, 'info');
+          
+          if (result.success) {
+            log(`✅ API 可用！房间号：${result.roomId}`, 'success');
+            break;
+          } else {
+            log(`⚠️ API 返回错误：${result.error}`, 'warn');
+          }
+        } catch (error) {
+          log(`❌ 请求失败：${error.message}`, 'error');
+          
+          // 详细错误信息
+          if (error.message.includes('Failed to fetch')) {
+            log('可能的原因：', 'warn');
+            log('  1. CORS 限制', 'warn');
+            log('  2. 网络不通', 'warn');
+            log('  3. HTTPS 证书问题', 'warn');
+          }
+        }
+      }
+      
+      // 3. 检查 localStorage
+      log('检查 localStorage...', 'info');
+      const savedApi = localStorage.getItem('ddz_api_endpoint');
+      if (savedApi) {
+        log(`保存的 API: ${savedApi}`, 'info');
+      } else {
+        log('未找到保存的 API 地址', 'warn');
+      }
+      
+      log('诊断完成', 'info');
+    }
+    
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+    diagnose();
+  </script>
+</body>
+</html>
