@@ -20,11 +20,11 @@ const TelegramBridge = {
     });
   },
   
-  // 发送数据到 Bot
+  // 发送数据到 Bot（不等待响应）
   sendToBot(action, data = {}) {
     if (!this.connected) {
       console.error('❌ Bot 未连接');
-      return Promise.reject(new Error('Bot 未连接'));
+      return;
     }
     
     const message = {
@@ -36,19 +36,13 @@ const TelegramBridge = {
     console.log('📤 发送到 Bot:', message);
     
     // 使用 Telegram.WebApp.sendData()
-    window.Telegram.WebApp.sendData(JSON.stringify(message));
-    
-    // 返回 Promise，等待 Bot 响应
-    return new Promise((resolve, reject) => {
-      const callbackId = action + '_' + Date.now();
-      this.pendingCallbacks[callbackId] = { resolve, reject, timeout: null };
-      
-      // 设置超时
-      this.pendingCallbacks[callbackId].timeout = setTimeout(() => {
-        delete this.pendingCallbacks[callbackId];
-        reject(new Error('等待 Bot 响应超时'));
-      }, 10000);
-    });
+    try {
+      window.Telegram.WebApp.sendData(JSON.stringify(message));
+      console.log('✅ 数据已发送到 Bot');
+    } catch (error) {
+      console.error('❌ 发送失败:', error);
+      throw error;
+    }
   },
   
   // 处理 Bot 返回的消息
@@ -114,15 +108,10 @@ const TelegramBridge = {
   onGameResult: null,
   
   // 创建房间
-  async createRoom() {
+  createRoom() {
     console.log('🏠 创建房间');
-    const response = await this.sendToBot('create_room');
-    
-    if (response.success && response.room) {
-      this.roomId = response.room.room_id;
-    }
-    
-    return response;
+    this.sendToBot('create_room', {});
+    // 响应会通过 onRoomCreated 回调处理
   },
   
   // 加入房间

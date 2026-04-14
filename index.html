@@ -1391,9 +1391,9 @@
       TelegramBridge.init();
       
       // 初始化完成后自动创建房间
-      setTimeout(async () => {
+      setTimeout(() => {
         console.log('🏠 自动创建房间');
-        await createMultiplayerRoom();
+        createMultiplayerRoom();
       }, 500);
       
       // 设置 Telegram Bridge 回调
@@ -1419,9 +1419,10 @@
     }
     
     // 创建多人房间
-    async function createMultiplayerRoom() {
+    function createMultiplayerRoom() {
+      console.log('🏠 创建多人房间');
       try {
-        await TelegramBridge.createRoom();
+        TelegramBridge.createRoom();
       } catch (error) {
         console.error('创建房间失败:', error);
         Telegram.WebApp.showPopup({
