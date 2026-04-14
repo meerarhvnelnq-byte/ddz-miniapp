@@ -9,7 +9,7 @@
   <script src="js/history.js"></script>
   <script src="js/sound.js"></script>
   <script src="js/animations.js"></script>
-  <script src="js/multiplayer.js"></script>
+  <script src="js/telegram-bridge.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -1382,86 +1382,46 @@
       document.getElementById('mp-join-code').value = '';
     }
     
-    // 初始化多人连接
+    // 初始化多人连接（使用 Telegram Bridge）
     function initMultiplayerConnection() {
       const userId = state.user?.id || 'player_' + Date.now();
-      const userInfo = {
-        username: state.user?.first_name || state.user?.username || '玩家',
-        avatar: state.user?.photo_url || ''
+      
+      console.log('🔌 初始化 Telegram Bridge，userId:', userId);
+      TelegramBridge.init();
+      
+      // 设置 Telegram Bridge 回调
+      TelegramBridge.onRoomCreated = (response) => {
+        console.log('🏠 房间创建成功:', response.room);
+        showRoomCreated(response.room);
       };
       
-      console.log('🔌 初始化多人连接，userId:', userId);
-      MultiplayerClient.connect(userId, userInfo);
-      
-      // 设置回调
-      MultiplayerClient.onConnect = () => {
-        console.log('✅ WebSocket 连接成功');
-        // 连接成功后自动创建房间
-        setTimeout(() => {
-          createMultiplayerRoom();
-        }, 500);
+      TelegramBridge.onRoomJoined = (response) => {
+        console.log('🚪 加入房间成功:', response.room);
+        showRoomJoined(response.room);
       };
       
-      MultiplayerClient.onDisconnect = () => {
-        console.error('❌ WebSocket 连接断开');
-        document.getElementById('mp-create-status').innerHTML = `
-          <div class="section" style="background:rgba(255,87,87,0.2);padding:20px;border-radius:15px;border:2px solid #ff5757;">
-            <p style="font-size:16px;margin-bottom:10px;color:#ff5757;">⚠️ 连接失败</p>
-            <p style="font-size:14px;color:rgba(255,255,255,0.8);">无法连接到 WebSocket 服务器</p>
-            <p style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:10px;">请检查服务器是否运行，或联系管理员</p>
-            <button class="btn btn-secondary" onclick="showMultiplayerMode()" style="margin-top:15px;">返回</button>
-          </div>
-        `;
+      TelegramBridge.onGameStarted = (response) => {
+        console.log('🎮 游戏开始:', response.game_state);
+        startMultiplayerGameFromServer(response.game_state);
       };
       
-      MultiplayerClient.onError = (error) => {
-        console.error('❌ WebSocket 错误:', error);
-        document.getElementById('mp-create-status').innerHTML = `
-          <div class="section" style="background:rgba(255,87,87,0.2);padding:20px;border-radius:15px;border:2px solid #ff5757;">
-            <p style="font-size:16px;margin-bottom:10px;color:#ff5757;">⚠️ 连接错误</p>
-            <p style="font-size:14px;color:rgba(255,255,255,0.8);">${error.message || '未知错误'}</p>
-            <button class="btn btn-secondary" onclick="showMultiplayerMode()" style="margin-top:15px;">返回</button>
-          </div>
-        `;
-      };
-      
-      MultiplayerClient.onRoomCreated = (data) => {
-        console.log('🏠 房间创建成功:', data.room);
-        showRoomCreated(data.room);
-      };
-      
-      MultiplayerClient.onRoomJoined = (data) => {
-        console.log('🚪 加入房间成功:', data.room);
-        showRoomJoined(data.room);
-      };
-      
-      MultiplayerClient.onPlayerJoined = (data) => {
-        console.log('👤 有新玩家加入:', data.room);
-        updatePlayerList(data.room);
-      };
-      
-      MultiplayerClient.onPlayerLeft = (data) => {
-        console.log('👋 玩家离开:', data.user_id);
-        updatePlayerList(data.room);
-      };
-      
-      MultiplayerClient.onGameStarted = (data) => {
-        console.log('🎮 游戏开始:', data.game_state);
-        startMultiplayerGameFromServer(data.game_state);
-      };
-      
-      MultiplayerClient.onGameResult = (data) => {
-        console.log('🏆 游戏结果:', data.result);
-        showMultiplayerGameResult(data.result);
+      TelegramBridge.onGameResult = (response) => {
+        console.log('🏆 游戏结果:', response);
+        showMultiplayerGameResult(response);
       };
     }
     
     // 创建多人房间
-    function createMultiplayerRoom() {
-      MultiplayerClient.createRoom({
-        username: state.user?.first_name || '玩家',
-        avatar: state.user?.photo_url || ''
-      });
+    async function createMultiplayerRoom() {
+      try {
+        await TelegramBridge.createRoom();
+      } catch (error) {
+        console.error('创建房间失败:', error);
+        Telegram.WebApp.showPopup({
+          title: '错误',
+          message: '创建房间失败：' + error.message
+        });
+      }
     }
     
     // 显示房间创建成功
@@ -1514,7 +1474,7 @@
     }
     
     // 通过房间号加入
-    function joinMultiplayerRoomByCode() {
+    async function joinMultiplayerRoomByCode() {
       const roomCode = document.getElementById('mp-join-code').value.toUpperCase().trim();
       
       if (!roomCode || roomCode.length !== 6) {
@@ -1525,16 +1485,20 @@
         return;
       }
       
-      MultiplayerClient.joinRoom(roomCode, {
-        username: state.user?.first_name || '玩家',
-        avatar: state.user?.photo_url || ''
-      });
-      
-      // 切换到创建房间界面（复用）
-      showScreen('multiplayer-create');
-      document.getElementById('mp-create-status').style.display = 'block';
-      document.getElementById('mp-create-success').style.display = 'none';
-      document.getElementById('mp-create-actions').style.display = 'none';
+      try {
+        await TelegramBridge.joinRoom(roomCode);
+        
+        // 切换到创建房间界面（复用）
+        showScreen('multiplayer-create');
+        document.getElementById('mp-create-status').style.display = 'block';
+        document.getElementById('mp-create-success').style.display = 'none';
+        document.getElementById('mp-create-actions').style.display = 'none';
+      } catch (error) {
+        Telegram.WebApp.showPopup({
+          title: '错误',
+          message: '加入房间失败：' + error.message
+        });
+      }
     }
     
     // 分享房间号
@@ -1556,8 +1520,15 @@
     }
     
     // 开始多人游戏
-    function startMultiplayerGame() {
-      MultiplayerClient.startGame();
+    async function startMultiplayerGame() {
+      try {
+        await TelegramBridge.startGame();
+      } catch (error) {
+        Telegram.WebApp.showPopup({
+          title: '错误',
+          message: '开始游戏失败：' + error.message
+        });
+      }
     }
     
     // 从服务器启动游戏
@@ -1569,8 +1540,12 @@
     }
     
     // 离开房间
-    function leaveMultiplayerRoom() {
-      MultiplayerClient.leaveRoom();
+    async function leaveMultiplayerRoom() {
+      try {
+        await TelegramBridge.leaveRoom();
+      } catch (error) {
+        console.error('离开房间失败:', error);
+      }
       backToLobby();
     }
     
