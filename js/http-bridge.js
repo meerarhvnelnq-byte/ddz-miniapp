@@ -10,7 +10,7 @@ const HttpBridge = {
   },
   
   // Cloudflare Tunnel HTTPS 地址（动态更新）
-  apiEndpoint: 'https://generates-tourism-sent-installed.trycloudflare.com/api/bot-game',
+  apiEndpoint: 'https://period-zip-homepage-purchased.trycloudflare.com/api/bot-game',
   
   // 发送请求到 Bot
   async sendRequest(action, data = {}) {
