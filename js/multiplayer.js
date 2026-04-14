@@ -68,10 +68,9 @@ const MultiplayerClient = {
     if (host === 'localhost' || host === '127.0.0.1') {
       return 'ws://localhost:8765';
     } else {
-      // 生产环境：使用服务器 IP 或域名
-      // GitHub Pages 部署时使用配置的 WebSocket 服务器
-      const wsHost = 'your-server-ip.com'; // TODO: 替换为实际服务器 IP 或域名
-      return `ws://${wsHost}:8765`;  // 注意：生产环境建议用 wss 加密
+      // 生产环境：使用服务器 IP（腾讯云）
+      const wsHost = '43.160.220.95'; // 服务器公网 IP
+      return `ws://${wsHost}:8765`;  // TODO: 生产环境建议用 wss 加密
     }
   },
   
