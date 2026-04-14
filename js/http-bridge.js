@@ -45,7 +45,7 @@ const HttpBridge = {
   
   // 创建房间
   async createRoom() {
-    const result = await this.sendRequest('create_room');
+    const result = await this.sendRequest('create_multiplayer_room');
     if (result.success && result.room) {
       this.roomId = result.room.room_id;
     }
@@ -55,7 +55,7 @@ const HttpBridge = {
   // 加入房间
   async joinRoom(roomId) {
     this.roomId = roomId;
-    return await this.sendRequest('join_room', { room_id: roomId });
+    return await this.sendRequest('join_multiplayer_room', { data: { roomId } });
   },
   
   // 离开房间
@@ -67,6 +67,6 @@ const HttpBridge = {
   
   // 开始游戏
   async startGame() {
-    return await this.sendRequest('start_game', { room_id: this.roomId });
+    return await this.sendRequest('start_multiplayer_game', { room_id: this.roomId });
   }
 };
