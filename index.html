@@ -9,7 +9,7 @@
   <script src="js/history.js"></script>
   <script src="js/sound.js"></script>
   <script src="js/animations.js"></script>
-  <script src="js/http-bridge.js"></script>
+  <script src="js/local-multiplayer.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -1397,27 +1397,27 @@
       document.getElementById('mp-join-code').value = '';
     }
     
-    // 初始化多人连接（使用 HTTP Bridge）
+    // 初始化多人连接（纯前端版本）
     function initMultiplayerConnection() {
       const userId = state.user?.id || 'player_' + Date.now();
       
-      console.log('🌐 初始化 HTTP Bridge，userId:', userId);
-      HttpBridge.init();
+      console.log('🎮 初始化 LocalMultiplayer，userId:', userId);
+      LocalMultiplayer.init();
       
       // 初始化完成后自动创建房间
-      setTimeout(async () => {
+      setTimeout(() => {
         console.log('🏠 自动创建房间');
-        await createMultiplayerRoom();
+        createMultiplayerRoom();
       }, 500);
     }
     
     // 创建多人房间
-    async function createMultiplayerRoom() {
+    function createMultiplayerRoom() {
       console.log('🏠 创建多人房间');
       updateDebugInfo('正在创建房间...');
       
       try {
-        const result = await HttpBridge.createRoom();
+        const result = LocalMultiplayer.createRoom();
         console.log('✅ 房间创建成功:', result);
         if (result.success && result.room) {
           showRoomCreated(result.room);
@@ -1484,7 +1484,7 @@
     }
     
     // 通过房间号加入
-    async function joinMultiplayerRoomByCode() {
+    function joinMultiplayerRoomByCode() {
       const roomCode = document.getElementById('mp-join-code').value.toUpperCase().trim();
       
       if (!roomCode || roomCode.length !== 6) {
@@ -1496,13 +1496,16 @@
       }
       
       try {
-        await TelegramBridge.joinRoom(roomCode);
+        const result = LocalMultiplayer.joinRoom(roomCode);
         
-        // 切换到创建房间界面（复用）
-        showScreen('multiplayer-create');
-        document.getElementById('mp-create-status').style.display = 'block';
-        document.getElementById('mp-create-success').style.display = 'none';
-        document.getElementById('mp-create-actions').style.display = 'none';
+        if (result.success) {
+          // 切换到创建房间界面（复用）
+          showScreen('multiplayer-create');
+          document.getElementById('mp-create-status').style.display = 'none';
+          showRoomJoined(result.room);
+        } else {
+          throw new Error(result.error || '加入失败');
+        }
       } catch (error) {
         Telegram.WebApp.showPopup({
           title: '错误',
