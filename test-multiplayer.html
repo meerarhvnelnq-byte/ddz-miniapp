@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>斗地主多人对战 - 测试页面</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(255,255,255,0.1);
+      padding: 30px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .status {
+      background: rgba(0,0,0,0.3);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .status-item:last-child {
+      border-bottom: none;
+    }
+    .status-label {
+      color: rgba(255,255,255,0.7);
+    }
+    .status-value {
+      font-weight: bold;
+    }
+    .status-value.success { color: #4facfe; }
+    .status-value.error { color: #f5576c; }
+    .status-value.warning { color: #ffd700; }
+    .btn {
+      width: 100%;
+      padding: 15px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      color: white;
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #f5576c 0%, #fa709a 100%);
+      color: white;
+    }
+    .log {
+      background: rgba(0,0,0,0.5);
+      padding: 15px;
+      border-radius: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .log-entry {
+      margin-bottom: 5px;
+      word-break: break-all;
+    }
+    .log-info { color: #4facfe; }
+    .log-success { color: #4facfe; }
+    .log-error { color: #f5576c; }
+    .log-warning { color: #ffd700; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 斗地主多人对战 - 连接测试</h1>
+    
+    <div class="status">
+      <div class="status-item">
+        <span class="status-label">服务器地址</span>
+        <span class="status-value" id="server-addr">43.160.220.95:8765</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">连接状态</span>
+        <span class="status-value" id="conn-status">未连接</span>
+      </div>
+      <div class="status-item">
+        <span class="status-label">WebSocket</span>
+        <span class="status-value" id="ws-status">未初始化</span>
+      </div>
+    </div>
+    
+    <button class="btn btn-success" onclick="testConnection()">
+      🔌 测试连接
+    </button>
+    
+    <button class="btn btn-primary" onclick="createTestRoom()">
+      🏠 创建测试房间
+    </button>
+    
+    <button class="btn btn-danger" onclick="disconnect()">
+      ❌ 断开连接
+    </button>
+    
+    <div class="log" id="log">
+      <div class="log-entry log-info">等待测试...</div>
+    </div>
+  </div>
+  
+  <script>
+    let ws = null;
+    
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      const time = new Date().toLocaleTimeString();
+      entry.textContent = `[${time}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+    
+    function updateStatus(key, value, type = '') {
+      const el = document.getElementById(key);
+      if (el) {
+        el.textContent = value;
+        el.className = `status-value ${type}`;
+      }
+    }
+    
+    function testConnection() {
+      log('开始测试连接...', 'info');
+      updateStatus('conn-status', '连接中...', 'warning');
+      updateStatus('ws-status', '初始化中...', 'warning');
+      
+      const wsUrl = 'ws://43.160.220.95:8765';
+      log(`尝试连接：${wsUrl}`, 'info');
+      
+      try {
+        ws = new WebSocket(wsUrl);
+        
+        ws.onopen = () => {
+          log('✅ WebSocket 连接成功！', 'success');
+          updateStatus('conn-status', '已连接', 'success');
+          updateStatus('ws-status', '正常', 'success');
+        };
+        
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            log(`📩 收到消息：${data.type}`, 'info');
+            
+            if (data.type === 'room_created') {
+              log(`🏠 房间创建成功：${data.room.room_id}`, 'success');
+            }
+          } catch (e) {
+            log(`收到消息：${event.data}`, 'info');
+          }
+        };
+        
+        ws.onerror = (error) => {
+          log(`❌ WebSocket 错误：${error}`, 'error');
+          updateStatus('ws-status', '错误', 'error');
+        };
+        
+        ws.onclose = () => {
+          log('❌ 连接已关闭', 'warning');
+          updateStatus('conn-status', '已断开', 'error');
+          updateStatus('ws-status', '已关闭', 'warning');
+        };
+        
+      } catch (e) {
+        log(`❌ 创建连接失败：${e.message}`, 'error');
+        updateStatus('conn-status', '失败', 'error');
+        updateStatus('ws-status', '失败', 'error');
+      }
+      
+      // 超时检测
+      setTimeout(() => {
+        if (ws && ws.readyState === WebSocket.CONNECTING) {
+          log('⚠️ 连接超时（10 秒）', 'warning');
+          log('可能原因：防火墙阻止 / 服务器未运行', 'warning');
+          updateStatus('conn-status', '超时', 'error');
+        }
+      }, 10000);
+    }
+    
+    function createTestRoom() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        log('⚠️ 请先连接服务器', 'warning');
+        return;
+      }
+      
+      const userId = 'test_' + Date.now();
+      const message = {
+        action: 'create_room',
+        user_id: userId,
+        user_info: {
+          username: '测试玩家',
+          avatar: ''
+        }
+      };
+      
+      log(`🏠 创建房间：${JSON.stringify(message)}`, 'info');
+      ws.send(JSON.stringify(message));
+    }
+    
+    function disconnect() {
+      if (ws) {
+        ws.close();
+        ws = null;
+        log('👋 已断开连接', 'warning');
+      }
+    }
+  </script>
+</body>
+</html>
